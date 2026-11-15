@@ -1,5 +1,6 @@
 import type { ActionContext, ActionDefinition } from './action.js'
 import { can, type Actor } from './actor.js'
+import { redactInput, type AuditSink } from './audit.js'
 import { createEventBus, type EventBus } from './events.js'
 import type { ActionWrap } from './module.js'
 import { createPipelines, type Pipelines } from './pipeline.js'
@@ -25,6 +26,12 @@ export interface Registry {
 export interface RegistryOptions {
   pipelines?: Pipelines
   events?: EventBus
+  /** Receives one entry for every call, whatever its outcome. */
+  audit?: AuditSink
+  /** Reported when the audit sink fails. The call's result is not changed. */
+  onAuditError?: (error: unknown) => void
+  /** Runs write and destructive handlers inside a database transaction. */
+  transaction?: <T>(fn: () => Promise<T>) => Promise<T>
 }
 
 const ACTION_NAME = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/
@@ -39,29 +46,86 @@ function compareWraps(a: ActionWrap, b: ActionWrap): number {
   return a.order - b.order || a.module.localeCompare(b.module)
 }
 
-class OutputInvalid extends Error {}
-
 export function createRegistry(options: RegistryOptions = {}): Registry {
   const pipelines = options.pipelines ?? createPipelines()
   const events = options.events ?? createEventBus()
   const actions = new Map<string, ActionDefinition>()
   const wrapsByAction = new Map<string, ActionWrap[]>()
 
-  /** Builds handler-with-wraps; the input reaching the handler is validated again. */
+  /** The handler with its wraps around it. Input reaching the handler is validated again. */
   function chain(
     action: ActionDefinition,
     ctx: ActionContext,
   ): (input: unknown) => Promise<unknown> {
     const inner = async (input: unknown): Promise<unknown> => {
       const checked = action.input.strict().safeParse(input)
-      if (!checked.success) throw new OutputInvalid('A wrap passed invalid input')
+      if (!checked.success) throw new Error('A wrap passed invalid input')
       return action.handler(checked.data, ctx)
     }
-    const wraps = wrapsByAction.get(action.name) ?? []
-    return wraps.reduceRight<(input: unknown) => Promise<unknown>>(
+    return (wrapsByAction.get(action.name) ?? []).reduceRight<(input: unknown) => Promise<unknown>>(
       (next, w) => (input) => w.wrap(input as never, ctx, next),
       inner,
     )
+  }
+
+  async function execute(
+    name: string,
+    input: unknown,
+    callOptions: CallOptions,
+  ): Promise<Result<unknown>> {
+    const action = actions.get(name)
+    if (!action) return fail('not_found', `Unknown action "${name}"`)
+
+    // Strict: unknown keys are rejected, never silently dropped.
+    const parsed = action.input.strict().safeParse(input)
+    if (!parsed.success) return fail('invalid_input', 'Invalid input', parsed.error.issues)
+
+    if (!can(callOptions.actor, action.permission)) {
+      return fail('forbidden', `Not allowed to call "${name}"`)
+    }
+    if (needsConfirmation(action, callOptions)) {
+      return fail('confirmation_required', `"${name}" must be confirmed before it runs`)
+    }
+
+    const ctx: ActionContext = { actor: callOptions.actor, actionName: name, pipelines, events }
+    const run = () => chain(action, ctx)(parsed.data)
+    try {
+      // Reads need no transaction; writes roll back completely if anything throws.
+      const output =
+        options.transaction && action.risk !== 'read' ? await options.transaction(run) : await run()
+      const checked = action.output.safeParse(output)
+      if (!checked.success) return fail('handler_error', 'Action failed')
+      return { ok: true, output: checked.data }
+    } catch {
+      // The handler's message may hold internals; callers get a generic one.
+      return fail('handler_error', 'Action failed')
+    }
+  }
+
+  async function audit(
+    name: string,
+    input: unknown,
+    callOptions: CallOptions,
+    result: Result<unknown>,
+    durationMs: number,
+  ): Promise<void> {
+    if (!options.audit) return
+    const action = actions.get(name)
+    const { actor } = callOptions
+    try {
+      await options.audit.write({
+        actorType: actor.type,
+        actorId: actor.id,
+        onBehalfOf: actor.onBehalfOf ?? null,
+        action: name,
+        input: action ? redactInput(input, action.redact ?? []) : {},
+        outcome: result.ok ? 'ok' : result.error.code,
+        durationMs,
+      })
+    } catch (error) {
+      // The action already happened; failing the call now could make a caller repeat it.
+      options.onAuditError?.(error)
+    }
   }
 
   return {
@@ -95,30 +159,10 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
       (wrapsByAction.get(name) ?? []).map((w) => ({ module: w.module, order: w.order })),
 
     async call(name, input, callOptions) {
-      const action = actions.get(name)
-      if (!action) return fail('not_found', `Unknown action "${name}"`)
-
-      // Strict: unknown keys are rejected, never silently dropped.
-      const parsed = action.input.strict().safeParse(input)
-      if (!parsed.success) return fail('invalid_input', 'Invalid input', parsed.error.issues)
-
-      if (!can(callOptions.actor, action.permission)) {
-        return fail('forbidden', `Not allowed to call "${name}"`)
-      }
-      if (needsConfirmation(action, callOptions)) {
-        return fail('confirmation_required', `"${name}" must be confirmed before it runs`)
-      }
-
-      const ctx: ActionContext = { actor: callOptions.actor, actionName: name, pipelines, events }
-      try {
-        const output = await chain(action, ctx)(parsed.data)
-        const checked = action.output.safeParse(output)
-        if (!checked.success) return fail('handler_error', 'Action failed')
-        return { ok: true, output: checked.data }
-      } catch {
-        // The handler's message may hold internals; callers get a generic one.
-        return fail('handler_error', 'Action failed')
-      }
+      const started = performance.now()
+      const result = await execute(name, input, callOptions)
+      await audit(name, input, callOptions, result, Math.round(performance.now() - started))
+      return result
     },
   }
 }
