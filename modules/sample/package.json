@@ -1,0 +1,26 @@
+{
+  "name": "@aicommerce/module-sample",
+  "version": "0.0.0",
+  "description": "A sample module, written the way a third party would write one",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@aicommerce/core": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}

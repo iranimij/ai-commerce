@@ -1,11 +1,16 @@
 import type { z } from 'zod'
 import type { Actor } from './actor.js'
+import type { EventBus } from './events.js'
+import type { Pipelines } from './pipeline.js'
 
 export type Risk = 'read' | 'write' | 'destructive'
 
 export interface ActionContext {
   actor: Actor
   actionName: string
+  /** Run another module's extension points from inside a handler. */
+  pipelines: Pipelines
+  events: EventBus
 }
 
 export interface ActionDefinition<

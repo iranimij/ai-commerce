@@ -15,8 +15,12 @@ export {
 export {
   createPipelines,
   definePipeline,
+  defineStep,
   type PipelineDefinition,
   type Pipelines,
   type Step,
   type TraceEntry,
 } from './pipeline.js'
+export { createApp, type ActionInfo, type App, type AppOptions } from './app.js'
+export { defineModule, type ActionWrap, type ModuleDefinition } from './module.js'
+export { type RegistryOptions } from './registry.js'

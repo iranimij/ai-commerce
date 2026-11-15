@@ -18,6 +18,11 @@ export interface Step<T> {
   run: (value: T) => Promise<T> | T
 }
 
+/** Identity helper so a step keeps its pipeline's value type inside `defineModule`. */
+export function defineStep<T>(step: Step<T>): Step<T> {
+  return step
+}
+
 export interface TraceEntry<T> {
   step: string
   module: string
