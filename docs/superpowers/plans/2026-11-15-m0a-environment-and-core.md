@@ -12,11 +12,11 @@
 
 M0 is split into three plans. This is the first.
 
-| Plan | Covers |
-|---|---|
-| M0a (this) | Environment, tooling, CI, GitHub setup, core registry, events, pipelines, modules, audit |
-| M0b | Resources, attributes, settings, revisions, auth and roles, server with generated endpoints and OpenAPI, i18n |
-| M0c | CLI, design system, installer, sample-module contract test end to end, M0 QA gate |
+| Plan       | Covers                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------- |
+| M0a (this) | Environment, tooling, CI, GitHub setup, core registry, events, pipelines, modules, audit                      |
+| M0b        | Resources, attributes, settings, revisions, auth and roles, server with generated endpoints and OpenAPI, i18n |
+| M0c        | CLI, design system, installer, sample-module contract test end to end, M0 QA gate                             |
 
 ## Global Constraints
 
@@ -42,11 +42,13 @@ M0 is split into three plans. This is the first.
 ### Task 1: Docker environment and monorepo skeleton
 
 **Files:**
+
 - Create: `compose.yaml`, `docker/Dockerfile.dev`, `dev`, `package.json`, `pnpm-workspace.yaml`, `turbo.json`, `tsconfig.base.json`, `eslint.config.js`, `.prettierrc.json`, `.prettierignore`, `.nvmrc`, `.env.example`
 - Create: `packages/core/package.json`, `packages/core/tsconfig.json`, `packages/core/src/index.ts`, `packages/core/vitest.config.ts`
 - Test: `packages/core/src/index.test.ts`
 
 **Interfaces:**
+
 - Produces: `./dev <command>` runs any command in the `app` container. Root scripts: `pnpm lint`, `pnpm format:check`, `pnpm typecheck`, `pnpm test`, `pnpm test:integration`, `pnpm build`, each delegating to Turborepo. Services: `app` (node:24, workdir `/app`, repo mounted, `node_modules` in a named volume), `db` (postgres:17, database `aicommerce`, user `aicommerce`, password `aicommerce`, healthcheck), `mail` (mailpit). `DATABASE_URL=postgres://aicommerce:aicommerce@db:5432/aicommerce` is set in the `app` service.
 
 - [ ] **Step 1:** Write `compose.yaml`, `docker/Dockerfile.dev` (node:24, corepack-enabled pnpm, non-root user) and the executable `dev` script (`docker compose run --rm app "$@"`).
@@ -70,11 +72,13 @@ test('core exposes its version', () => {
 ### Task 2: CI and GitHub repository setup
 
 **Files:**
+
 - Create: `.github/workflows/ci.yml`, `.github/workflows/codeql.yml`, `.github/workflows/release.yml`, `.github/dependabot.yml`, `.github/pull_request_template.md`, `.github/ISSUE_TEMPLATE/bug_report.yml`, `.github/ISSUE_TEMPLATE/feature_request.yml`, `.github/ISSUE_TEMPLATE/config.yml`, `.github/CODEOWNERS`
 - Create: `CONTRIBUTING.md`, `SECURITY.md`, `CODE_OF_CONDUCT.md`, `commitlint.config.js`, `.changeset/config.json`
 - Modify: `package.json` (add `commitlint`, `changeset` scripts and dev dependencies), `README.md` (add CI badge and a "Development" section)
 
 **Interfaces:**
+
 - Produces: required status check named `ci` (one job that runs lint, format check, typecheck, unit tests, integration tests with a `postgres:17` service, build, `pnpm audit --audit-level high`, and commitlint on the pull request title). CI runs on the GitHub runner with Node 24 directly; Docker-only is the rule for the developer machine.
 
 - [ ] **Step 1:** Write `ci.yml` with the single `ci` job on `pull_request` and `push` to `main`, with pnpm caching and `DATABASE_URL` pointing at the service container.
@@ -101,11 +105,13 @@ JSON
 ### Task 3: Actions and the call path
 
 **Files:**
+
 - Create: `packages/core/src/actor.ts`, `packages/core/src/action.ts`, `packages/core/src/registry.ts`, `packages/core/src/result.ts`
 - Modify: `packages/core/src/index.ts` (re-export)
 - Test: `packages/core/src/registry.test.ts`
 
 **Interfaces:**
+
 - Produces:
 
 ```ts
@@ -123,7 +129,10 @@ export function can(actor: Actor, permission: string | null): boolean // null = 
 
 // action.ts
 export type Risk = 'read' | 'write' | 'destructive'
-export interface ActionContext { actor: Actor; actionName: string }
+export interface ActionContext {
+  actor: Actor
+  actionName: string
+}
 export interface ActionDefinition<I extends z.ZodObject, O extends z.ZodType> {
   name: string // 'module.verb', lower case, dot separated
   description: string
@@ -140,13 +149,16 @@ export function defineAction<I extends z.ZodObject, O extends z.ZodType>(
 
 // result.ts
 export type ErrorCode =
-  | 'not_found' | 'invalid_input' | 'forbidden' | 'confirmation_required' | 'handler_error'
+  'not_found' | 'invalid_input' | 'forbidden' | 'confirmation_required' | 'handler_error'
 export type Result<T> =
   | { ok: true; output: T }
   | { ok: false; error: { code: ErrorCode; message: string; issues?: z.core.$ZodIssue[] } }
 
 // registry.ts
-export interface CallOptions { actor: Actor; confirmed?: boolean }
+export interface CallOptions {
+  actor: Actor
+  confirmed?: boolean
+}
 export interface Registry {
   register(action: ActionDefinition<any, any>): void // throws on duplicate or malformed name
   get(name: string): ActionDefinition<any, any> | undefined
@@ -183,16 +195,21 @@ test('a name that is not module.verb throws', ...)               // 'Refund' and
 ### Task 4: Events and pipelines
 
 **Files:**
+
 - Create: `packages/core/src/events.ts`, `packages/core/src/pipeline.ts`
 - Modify: `packages/core/src/index.ts`
 - Test: `packages/core/src/events.test.ts`, `packages/core/src/pipeline.test.ts`
 
 **Interfaces:**
+
 - Produces:
 
 ```ts
 // events.ts
-export interface EventDefinition<P extends z.ZodType> { name: string; payload: P }
+export interface EventDefinition<P extends z.ZodType> {
+  name: string
+  payload: P
+}
 export function defineEvent<P extends z.ZodType>(name: string, payload: P): EventDefinition<P>
 export interface Subscriber<P extends z.ZodType> {
   event: EventDefinition<P>
@@ -209,7 +226,9 @@ export function createEventBus(options?: {
 }): EventBus
 
 // pipeline.ts
-export interface PipelineDefinition<T> { name: string }
+export interface PipelineDefinition<T> {
+  name: string
+}
 export function definePipeline<T>(name: string): PipelineDefinition<T>
 export interface Step<T> {
   pipeline: PipelineDefinition<T>
@@ -218,7 +237,12 @@ export interface Step<T> {
   order: number
   run: (value: T) => Promise<T> | T
 }
-export interface TraceEntry<T> { step: string; module: string; before: T; after: T }
+export interface TraceEntry<T> {
+  step: string
+  module: string
+  before: T
+  after: T
+}
 export interface Pipelines {
   addStep<T>(step: Step<T>): void // throws on duplicate (pipeline, module, name)
   run<T>(pipeline: PipelineDefinition<T>, initial: T): Promise<{ value: T; trace: TraceEntry<T>[] }>
@@ -254,12 +278,14 @@ test('adding the same step twice throws', ...)
 ### Task 5: Modules and the application
 
 **Files:**
+
 - Create: `packages/core/src/module.ts`, `packages/core/src/app.ts`
 - Create: `modules/sample/package.json`, `modules/sample/tsconfig.json`, `modules/sample/src/index.ts` (package `@aicommerce/module-sample`)
 - Modify: `packages/core/src/index.ts`, `pnpm-workspace.yaml` (add `modules/*`)
 - Test: `packages/core/src/app.test.ts`, `modules/sample/src/index.test.ts`
 
 **Interfaces:**
+
 - Consumes: `createRegistry`, `createEventBus`, `createPipelines` and their types from Tasks 3 and 4.
 - Produces:
 
@@ -333,12 +359,14 @@ test('with sample-loud disabled the result is unchanged', ...)
 ### Task 6: Database and the audit log
 
 **Files:**
+
 - Create: `packages/db/package.json`, `packages/db/tsconfig.json`, `packages/db/vitest.integration.config.ts`, `packages/db/src/index.ts`, `packages/db/src/client.ts`, `packages/db/src/migrate.ts`
 - Create: `packages/core/src/audit.ts`, `packages/core/migrations/0001_audit_log.sql`
 - Modify: `packages/core/src/registry.ts` (optional `audit` and `transaction` hooks), `packages/core/src/index.ts`, `turbo.json` (`test:integration` task)
 - Test: `packages/db/src/migrate.integration.test.ts`, `packages/core/src/audit.integration.test.ts`
 
 **Interfaces:**
+
 - Consumes: `Registry`, `CallOptions`, `Result`, `ActionDefinition.redact` from Task 3.
 - Produces:
 
@@ -351,10 +379,17 @@ export function runMigrations(db: Db, sources: { module: string; dir: string }[]
 
 // core/audit.ts
 export interface AuditEntry {
-  actorType: ActorType; actorId: string | null; onBehalfOf: string | null
-  action: string; input: unknown; outcome: 'ok' | ErrorCode; durationMs: number
+  actorType: ActorType
+  actorId: string | null
+  onBehalfOf: string | null
+  action: string
+  input: unknown
+  outcome: 'ok' | ErrorCode
+  durationMs: number
 }
-export interface AuditSink { write(entry: AuditEntry): Promise<void> }
+export interface AuditSink {
+  write(entry: AuditEntry): Promise<void>
+}
 export function createDbAuditSink(db: Db): AuditSink
 export function redactInput(input: unknown, keys: string[]): unknown // replaces values with '[redacted]'
 

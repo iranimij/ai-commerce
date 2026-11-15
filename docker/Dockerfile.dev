@@ -1,0 +1,7 @@
+FROM node:24-bookworm-slim
+RUN npm install -g pnpm@12.21.0 \
+  && mkdir -p /app/node_modules /pnpm-store \
+  && chown -R node:node /app /pnpm-store
+ENV npm_config_store_dir=/pnpm-store
+USER node
+WORKDIR /app

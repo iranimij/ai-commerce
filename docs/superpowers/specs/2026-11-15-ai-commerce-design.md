@@ -16,7 +16,6 @@ Iman wants an open-source e-commerce platform that can replace Magento, Shopify 
 - **Quality**: professional, accessible UI; security in the core; unit, integration and end-to-end
   tests everywhere; a real QA pass on every milestone; everything documented well in Notion.
 
-
 ## 2. Product principles
 
 These settle any detail the plan does not spell out.
@@ -101,18 +100,18 @@ Answered by Iman on 2026-11-15:
 My proposals. Each is cheap because it falls out of the architecture, and each is placed in a
 milestone.
 
-| Idea | What the merchant gets | Why it is cheap | Milestone |
-|---|---|---|---|
-| Explain this number | Click any price, tax or total and see each step that produced it | Pipelines already run as named steps | M2 |
-| Undo anything | A history on every product, page, order and setting, with one-click restore | Revisions are in the core | M1 |
-| Preview before apply | Bulk changes by chat ("raise all shoe prices 5%") show a before and after table first | Actions can run in a rolled-back transaction | M1 |
-| Automations by chat | "When stock drops under 5, email me" becomes a saved rule | A rule is an event plus an action, both already typed | M9 |
-| Morning brief | A daily page: yesterday's sales, what needs attention, suggested actions | A scheduled chat prompt producing an artifact | M9 |
-| Shop health check | The AI audits missing images, weak SEO text, broken links, accessibility, slow pages, and offers fixes | Read actions plus existing checks | M4 |
-| Talk to your shop | Voice input in the admin chat, on desktop and phone | Browser speech recognition | M1 |
-| Command palette | One shortcut to search, jump or run any action | The registry lists every action | M1 |
-| Ready for AI shoppers | Product data published in the formats AI shopping agents read, and a safe public MCP endpoint for browsing and ordering | Same registry, guest actor | M10 |
-| Teach me | Every chat answer can show how to do it by hand and why it matters | Action descriptions already exist | M1 |
+| Idea                  | What the merchant gets                                                                                                  | Why it is cheap                                       | Milestone |
+| --------------------- | ----------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- | --------- |
+| Explain this number   | Click any price, tax or total and see each step that produced it                                                        | Pipelines already run as named steps                  | M2        |
+| Undo anything         | A history on every product, page, order and setting, with one-click restore                                             | Revisions are in the core                             | M1        |
+| Preview before apply  | Bulk changes by chat ("raise all shoe prices 5%") show a before and after table first                                   | Actions can run in a rolled-back transaction          | M1        |
+| Automations by chat   | "When stock drops under 5, email me" becomes a saved rule                                                               | A rule is an event plus an action, both already typed | M9        |
+| Morning brief         | A daily page: yesterday's sales, what needs attention, suggested actions                                                | A scheduled chat prompt producing an artifact         | M9        |
+| Shop health check     | The AI audits missing images, weak SEO text, broken links, accessibility, slow pages, and offers fixes                  | Read actions plus existing checks                     | M4        |
+| Talk to your shop     | Voice input in the admin chat, on desktop and phone                                                                     | Browser speech recognition                            | M1        |
+| Command palette       | One shortcut to search, jump or run any action                                                                          | The registry lists every action                       | M1        |
+| Ready for AI shoppers | Product data published in the formats AI shopping agents read, and a safe public MCP endpoint for browsing and ordering | Same registry, guest actor                            | M10       |
+| Teach me              | Every chat answer can show how to do it by hand and why it matters                                                      | Action descriptions already exist                     | M1        |
 
 ## 3b. The admin: dashboard and chat together, and how trust is earned
 
@@ -133,11 +132,11 @@ dashboard; the two are one admin.
 
 Trust is a setting per admin, with three levels:
 
-| Level | What the AI may do |
-|---|---|
-| Guide | Answer questions and open the right screen pre-filled. The admin presses save |
-| Ask (default) | Make changes, with a confirm card for each one first |
-| Auto | Make ordinary changes without asking. Destructive actions still ask, always |
+| Level         | What the AI may do                                                            |
+| ------------- | ----------------------------------------------------------------------------- |
+| Guide         | Answer questions and open the right screen pre-filled. The admin presses save |
+| Ask (default) | Make changes, with a confirm card for each one first                          |
+| Auto          | Make ordinary changes without asking. Destructive actions still ask, always   |
 
 A shop owner can cap the level for other admins. The AI can never exceed the admin's own
 permissions at any level.
@@ -164,12 +163,12 @@ A duty is a standing instruction written in plain words, for example:
 
 The chat turns the sentence into a duty the admin reviews before switching it on:
 
-| Part | Meaning |
-|---|---|
-| Trigger | An event (`review.created`, `order.delivered`) or a schedule |
-| Instruction | The admin's words, which the model follows on each run |
+| Part            | Meaning                                                                                           |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| Trigger         | An event (`review.created`, `order.delivered`) or a schedule                                      |
+| Instruction     | The admin's words, which the model follows on each run                                            |
 | Allowed actions | A short explicit list (`review.approve`, `review.hold`, `email.send`). Nothing else can be called |
-| Limits | Maximum runs per day, maximum emails per customer, spending cap on AI usage |
+| Limits          | Maximum runs per day, maximum emails per customer, spending cap on AI usage                       |
 
 Safety rules:
 
@@ -189,18 +188,18 @@ This replaces "Automations by chat" and "Morning brief" in section 3a, which are
 Proposals, each placed where its data first exists. All are modules that can be off, all work
 through the same provider setting, and each has a non-AI fallback.
 
-| Feature | What it does | Fallback without AI | Milestone |
-|---|---|---|---|
+| Feature                                | What it does                                                                                               | Fallback without AI          | Milestone                          |
+| -------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------- | ---------------------------------- |
 | Related products, upsells, cross-sells | Picks the best matches from product meaning and from what is bought together; the admin can pin or exclude | Hand-picked or same-category | M1, improved with order data in M2 |
-| Search that understands meaning | "warm jacket for rain" finds waterproof coats | Keyword search | M1 |
-| Product and SEO text | Drafts titles, descriptions, meta text in the shop's tone | Empty fields | M1 |
-| Image descriptions | Alt text for every image, for accessibility and SEO | Empty | M1 |
-| Customer message drafts | Suggested replies to order questions for the admin to send | None | M2 |
-| Order risk hint | Flags unusual orders for review; never blocks on its own | None | M2 |
-| Translations | Catalog and content into a new language as drafts | Manual | M6 |
-| Stock forecast | Predicts when a product runs out | Low-stock threshold | M7 |
-| Review summary and moderation | "What buyers say" on the product page; spam and abuse held | Manual moderation | M8 |
-| Smart segments and recommendations | Customer groups and personal recommendations | Rule-based | M11 |
+| Search that understands meaning        | "warm jacket for rain" finds waterproof coats                                                              | Keyword search               | M1                                 |
+| Product and SEO text                   | Drafts titles, descriptions, meta text in the shop's tone                                                  | Empty fields                 | M1                                 |
+| Image descriptions                     | Alt text for every image, for accessibility and SEO                                                        | Empty                        | M1                                 |
+| Customer message drafts                | Suggested replies to order questions for the admin to send                                                 | None                         | M2                                 |
+| Order risk hint                        | Flags unusual orders for review; never blocks on its own                                                   | None                         | M2                                 |
+| Translations                           | Catalog and content into a new language as drafts                                                          | Manual                       | M6                                 |
+| Stock forecast                         | Predicts when a product runs out                                                                           | Low-stock threshold          | M7                                 |
+| Review summary and moderation          | "What buyers say" on the product page; spam and abuse held                                                 | Manual moderation            | M8                                 |
+| Smart segments and recommendations     | Customer groups and personal recommendations                                                               | Rule-based                   | M11                                |
 
 Meaning-based features use vector search inside PostgreSQL (pgvector), so no new service is
 needed.
@@ -226,15 +225,15 @@ Iman, 2026-11-15: one model for the whole shop, and separate models for individu
 
 Every AI task names a **role**, and settings map each role to a provider and model:
 
-| Role | Used for | Sensible default |
-|---|---|---|
-| `assistant` | The admin chat, duties, anything that calls actions | The strongest model configured |
-| `writing` | Product text, SEO text, translations, message drafts | Same as assistant |
-| `moderation` | Reviews and comments: spam, abuse, sentiment | A small fast model |
-| `embedding` | Related products, meaning-based search, recommendations | An embedding model |
-| `vision` | Image descriptions | A model that reads images |
-| `forecast` | Stock forecast, order risk | A small model, or plain statistics |
-| `shopper` | The customer chatbot on the storefront | Same as assistant, or a cheaper model |
+| Role         | Used for                                                | Sensible default                      |
+| ------------ | ------------------------------------------------------- | ------------------------------------- |
+| `assistant`  | The admin chat, duties, anything that calls actions     | The strongest model configured        |
+| `writing`    | Product text, SEO text, translations, message drafts    | Same as assistant                     |
+| `moderation` | Reviews and comments: spam, abuse, sentiment            | A small fast model                    |
+| `embedding`  | Related products, meaning-based search, recommendations | An embedding model                    |
+| `vision`     | Image descriptions                                      | A model that reads images             |
+| `forecast`   | Stock forecast, order risk                              | A small model, or plain statistics    |
+| `shopper`    | The customer chatbot on the storefront                  | Same as assistant, or a cheaper model |
 
 - A shop that sets only one model uses it for every role. Overriding a role is one setting.
 - A module can define a new role for its own feature.
@@ -258,15 +257,16 @@ on the shop's own server.
 - **AI mode** is a named choice in the installer and the settings (Iman, 2026-11-15: merchants
   will value their data never leaving their server):
 
-  | Mode | Where data goes | Trade-off |
-  |---|---|---|
-  | Private | Nowhere. Every role runs on the shop's server | The chats are less capable unless the server has a strong GPU. X3 is meant to close that gap |
-  | Hybrid (default) | Only the `assistant` and `shopper` chats use a hosted provider; everything else stays local | Best balance today |
-  | Hosted | A provider handles every role | Easiest, no GPU needed |
-  | Off | No AI | Dashboard only |
+  | Mode             | Where data goes                                                                             | Trade-off                                                                                    |
+  | ---------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+  | Private          | Nowhere. Every role runs on the shop's server                                               | The chats are less capable unless the server has a strong GPU. X3 is meant to close that gap |
+  | Hybrid (default) | Only the `assistant` and `shopper` chats use a hosted provider; everything else stays local | Best balance today                                                                           |
+  | Hosted           | A provider handles every role                                                               | Easiest, no GPU needed                                                                       |
+  | Off              | No AI                                                                                       | Dashboard only                                                                               |
 
   The mode can be changed at any time. Every AI feature shows which model runs it and whether it
   is local or hosted.
+
 - Arrives in M1 with the first roles that can use it (embedding, vision).
 
 ### Our own models, published as AI Commerce on Hugging Face
@@ -276,11 +276,11 @@ shops and developers can use them too.
 
 A separate model track that runs beside the milestones:
 
-| # | Model | What it does | Trained on | When |
-|---|---|---|---|---|
-| X1 | Product matcher (flagship) | Finds the best related products for a customer, in two steps: find candidates by meaning, then rank them against the cart, browsing, what is bought together, price range and stock, with a reason for each | Public product, query and co-purchase data with a licence that allows it | After M2 |
-| X2 | Review moderator | Spam, abuse and sentiment for product reviews | Public review data plus labelled examples | After M8 |
-| X3 | Commerce assistant | A small model tuned to call shop actions, for running the admin chat and the shopper assistant locally | Recorded and synthetic chat-to-action examples | After M11, only if X1 and X2 proved worthwhile |
+| #   | Model                      | What it does                                                                                                                                                                                                | Trained on                                                               | When                                           |
+| --- | -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------------------------------------- |
+| X1  | Product matcher (flagship) | Finds the best related products for a customer, in two steps: find candidates by meaning, then rank them against the cart, browsing, what is bought together, price range and stock, with a reason for each | Public product, query and co-purchase data with a licence that allows it | After M2                                       |
+| X2  | Review moderator           | Spam, abuse and sentiment for product reviews                                                                                                                                                               | Public review data plus labelled examples                                | After M8                                       |
+| X3  | Commerce assistant         | A small model tuned to call shop actions, for running the admin chat and the shopper assistant locally                                                                                                      | Recorded and synthetic chat-to-action examples                           | After M11, only if X1 and X2 proved worthwhile |
 
 Rules for every model:
 
@@ -300,12 +300,12 @@ Iman, 2026-11-15: customers must be able to chat with the shop, and it should be
 
 Options considered:
 
-| | A. Hosted model with shop tools | B. Open model on the shop's server | C. Our own commerce model |
-|---|---|---|---|
-| How smart | Very, from day one | Good for questions and search, weaker at multi-step tasks | Unknown until trained and tested |
-| Cost to the merchant | Per conversation | A server with a GPU, no per-message fee | Same as B |
-| Customer data | Goes to the provider | Stays on the server | Stays on the server |
-| When | M2 | M2, as a setting | Model track X3 |
+|                      | A. Hosted model with shop tools | B. Open model on the shop's server                        | C. Our own commerce model        |
+| -------------------- | ------------------------------- | --------------------------------------------------------- | -------------------------------- |
+| How smart            | Very, from day one              | Good for questions and search, weaker at multi-step tasks | Unknown until trained and tested |
+| Cost to the merchant | Per conversation                | A server with a GPU, no per-message fee                   | Same as B                        |
+| Customer data        | Goes to the provider            | Stays on the server                                       | Stays on the server              |
+| When                 | M2                              | M2, as a setting                                          | Model track X3                   |
 
 **Chosen: A first, built so B and C are a setting** (my recommendation; Iman asked for options).
 The chatbot has its own model role, `shopper`.
@@ -353,12 +353,12 @@ Every answer has "show the query": the action, its exact input, and what the mod
 Each field in a schema carries a class. One function in the core, the AI boundary, is the only
 place data is prepared for a model, and it enforces the classes.
 
-| Class | Examples | To a hosted model | To a local model |
-|---|---|---|---|
-| `public` | Product names, prices, page text | Yes | Yes |
-| `internal` | Order totals, stock, sales figures | Digests by default; the owner can allow rows | Yes |
-| `personal` | Names, emails, addresses, phone numbers, IP addresses | No. Replaced by a stable stand-in ("Customer 1042") and restored when shown to the admin. The owner can allow named fields | Yes |
-| `secret` | Passwords, API keys, tokens, payment details | Never | Never |
+| Class      | Examples                                              | To a hosted model                                                                                                          | To a local model |
+| ---------- | ----------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `public`   | Product names, prices, page text                      | Yes                                                                                                                        | Yes              |
+| `internal` | Order totals, stock, sales figures                    | Digests by default; the owner can allow rows                                                                               | Yes              |
+| `personal` | Names, emails, addresses, phone numbers, IP addresses | No. Replaced by a stable stand-in ("Customer 1042") and restored when shown to the admin. The owner can allow named fields | Yes              |
+| `secret`   | Passwords, API keys, tokens, payment details          | Never                                                                                                                      | Never            |
 
 - A field with no class is treated as `personal`, so a module author who forgets is safe.
 - `secret` has no setting. It cannot be allowed.
@@ -381,13 +381,13 @@ The shop owner can lock any action, module or field from the AI.
 
 Separate from the activity log (what the AI did), the outbound log records what was sent.
 
-| Recorded per request | |
-|---|---|
-| When, and which admin, duty or visitor it was for | |
-| Role, provider, model, and whether it was local or hosted | |
-| The exact content sent, viewable in full | |
-| Which privacy classes it contained and how many stand-ins were used | |
-| Size and cost | |
+| Recorded per request                                                |     |
+| ------------------------------------------------------------------- | --- |
+| When, and which admin, duty or visitor it was for                   |     |
+| Role, provider, model, and whether it was local or hosted           |     |
+| The exact content sent, viewable in full                            |     |
+| Which privacy classes it contained and how many stand-ins were used |     |
+| Size and cost                                                       |     |
 
 The owner can filter it, export it, and set how long it is kept. In Private mode the page states
 that no request left the server, and the app container can be run with outbound network access
@@ -404,12 +404,12 @@ to model providers blocked, so the claim is enforced by the network and not only
 
 ### Where this is built
 
-| Piece | Milestone |
-|---|---|
-| Privacy class on fields, the AI boundary, default-personal rule | M0b |
-| Digests, stand-ins, "show the query", outbound log, locks | M1 |
-| Network-enforced Private mode | M1 |
-| Applied to duties and the shopper assistant | M2 |
+| Piece                                                           | Milestone |
+| --------------------------------------------------------------- | --------- |
+| Privacy class on fields, the AI boundary, default-personal rule | M0b       |
+| Digests, stand-ins, "show the query", outbound log, locks       | M1        |
+| Network-enforced Private mode                                   | M1        |
+| Applied to duties and the shopper assistant                     | M2        |
 
 ## 4. Architecture
 
@@ -437,31 +437,31 @@ ai-commerce/
 
 ### 4.2 Contracts a module uses
 
-| Contract | Purpose | Replaces in Magento |
-|---|---|---|
-| `defineModule` | Name, dependencies, everything below | module.xml, registration.php |
-| `defineAction` | One operation: input, output, permission, risk, handler | Service contracts, webapi.xml, acl.xml, GraphQL resolvers |
-| `defineResource` | Groups list, get, create, update, delete around an entity; drives generated screens | UI component XML, grids, forms |
-| Events | Typed notifications after something happened | Observers |
-| Pipelines | Named, ordered extension points (`price.calculate`, `cart.totals`, `checkout.validate`) | Plugins |
-| Attributes | Extra typed fields on any entity, created by modules or by merchants at runtime, filterable | EAV, extension attributes |
-| Settings | Typed configuration, global then channel | system.xml, core_config_data |
-| Slots | Named places in storefront and admin where a module puts or replaces UI | Layout XML, blocks |
-| Schema | The module's own tables and migrations | db_schema.xml, patches |
+| Contract         | Purpose                                                                                     | Replaces in Magento                                       |
+| ---------------- | ------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| `defineModule`   | Name, dependencies, everything below                                                        | module.xml, registration.php                              |
+| `defineAction`   | One operation: input, output, permission, risk, handler                                     | Service contracts, webapi.xml, acl.xml, GraphQL resolvers |
+| `defineResource` | Groups list, get, create, update, delete around an entity; drives generated screens         | UI component XML, grids, forms                            |
+| Events           | Typed notifications after something happened                                                | Observers                                                 |
+| Pipelines        | Named, ordered extension points (`price.calculate`, `cart.totals`, `checkout.validate`)     | Plugins                                                   |
+| Attributes       | Extra typed fields on any entity, created by modules or by merchants at runtime, filterable | EAV, extension attributes                                 |
+| Settings         | Typed configuration, global then channel                                                    | system.xml, core_config_data                              |
+| Slots            | Named places in storefront and admin where a module puts or replaces UI                     | Layout XML, blocks                                        |
+| Schema           | The module's own tables and migrations                                                      | db_schema.xml, patches                                    |
 
 ### 4.2a Overriding core behaviour without editing core
 
 Iman, 2026-11-15: developers must be able to change core behaviour as freely as with Magento's
 plugins, events and overrides, and updates must not break because of it.
 
-| Need | Contract | Magento equivalent |
-|---|---|---|
-| Run code before, after or instead of any action | `wraps`: a function around the action's handler, `(input, ctx, next) => output`, with an order | Plugin (before, after, around) |
-| Swap a core service, such as the tax calculator or the URL generator | Services are named interfaces; a module `provides` a replacement | Preference |
-| React to something that happened | Event subscriber | Observer |
-| Change one step of a calculation | Add a pipeline step, or replace a named step | Plugin on a calculation method |
-| Replace part of a page or admin screen | Replace a slot component or a theme template | Layout XML, template override |
-| Add or change fields | Attributes | Extension attributes |
+| Need                                                                 | Contract                                                                                       | Magento equivalent             |
+| -------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------ |
+| Run code before, after or instead of any action                      | `wraps`: a function around the action's handler, `(input, ctx, next) => output`, with an order | Plugin (before, after, around) |
+| Swap a core service, such as the tax calculator or the URL generator | Services are named interfaces; a module `provides` a replacement                               | Preference                     |
+| React to something that happened                                     | Event subscriber                                                                               | Observer                       |
+| Change one step of a calculation                                     | Add a pipeline step, or replace a named step                                                   | Plugin on a calculation method |
+| Replace part of a page or admin screen                               | Replace a slot component or a theme template                                                   | Layout XML, template override  |
+| Add or change fields                                                 | Attributes                                                                                     | Extension attributes           |
 
 Rules that keep updates safe:
 
@@ -487,15 +487,15 @@ actions too.
 
 ### 4.4 Answers to the reviewer's gaps
 
-| Gap | Answer |
-|---|---|
-| Drafts and undo | A revision snapshot on every resource write. Undo restores a revision. Inline edits save directly; scheduled changes (M11) build on revisions |
-| Channel, locale, currency | Schemas are channel-aware, translatable and multi-currency from M1. Managing more than one arrives in M6 with no rewrite |
-| Stock before the inventory module | One quantity per product behind the inventory interface |
-| Destructive actions with no click | MCP uses a two-step confirm token. API tokens are trusted within their explicit scope |
-| Artifacts | The model returns data plus a layout chosen from our components (table, stat, chart, document). It never writes HTML |
-| One deployable | Storefront and admin call actions in-process. One container can run everything |
-| What parity means | Feature for feature by M11. A milestone may be split over several chats |
+| Gap                               | Answer                                                                                                                                        |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Drafts and undo                   | A revision snapshot on every resource write. Undo restores a revision. Inline edits save directly; scheduled changes (M11) build on revisions |
+| Channel, locale, currency         | Schemas are channel-aware, translatable and multi-currency from M1. Managing more than one arrives in M6 with no rewrite                      |
+| Stock before the inventory module | One quantity per product behind the inventory interface                                                                                       |
+| Destructive actions with no click | MCP uses a two-step confirm token. API tokens are trusted within their explicit scope                                                         |
+| Artifacts                         | The model returns data plus a layout chosen from our components (table, stat, chart, document). It never writes HTML                          |
+| One deployable                    | Storefront and admin call actions in-process. One container can run everything                                                                |
+| What parity means                 | Feature for feature by M11. A milestone may be split over several chats                                                                       |
 
 ## 5. Standards that apply to every milestone
 
@@ -513,11 +513,11 @@ actions too.
 
 ### 5.2 Testing
 
-| Level | Tool | Covers |
-|---|---|---|
-| Unit | Vitest | Handlers, pipeline steps, pure logic |
-| Integration | Vitest + real PostgreSQL | Every action through the registry: success, permission denied, invalid input |
-| End-to-end | Playwright | Every user flow the milestone delivers, desktop and mobile, with recorded AI responses so runs are repeatable |
+| Level       | Tool                     | Covers                                                                                                        |
+| ----------- | ------------------------ | ------------------------------------------------------------------------------------------------------------- |
+| Unit        | Vitest                   | Handlers, pipeline steps, pure logic                                                                          |
+| Integration | Vitest + real PostgreSQL | Every action through the registry: success, permission denied, invalid input                                  |
+| End-to-end  | Playwright               | Every user flow the milestone delivers, desktop and mobile, with recorded AI responses so runs are repeatable |
 
 Also: accessibility checks in end-to-end runs, and a contract test proving the sample third-party
 module still works after every core change.
@@ -560,14 +560,14 @@ After automated tests are green I act as the tester:
 
 The small shop and the very large shop run the same code; only the deployment differs.
 
-| | Small shop | Very large shop |
-|---|---|---|
-| Processes | One container | Many stateless app containers behind a load balancer, separate job workers |
-| Database | One PostgreSQL | Primary plus read replicas, connection pooling |
-| Search | PostgreSQL full-text | OpenSearch adapter |
-| Cache and sessions | PostgreSQL tables | Redis adapter |
-| Pages | Server-rendered with built-in cache | Same, behind a CDN with tag-based purge |
-| Files | Local disk | S3-compatible storage |
+|                    | Small shop                          | Very large shop                                                            |
+| ------------------ | ----------------------------------- | -------------------------------------------------------------------------- |
+| Processes          | One container                       | Many stateless app containers behind a load balancer, separate job workers |
+| Database           | One PostgreSQL                      | Primary plus read replicas, connection pooling                             |
+| Search             | PostgreSQL full-text                | OpenSearch adapter                                                         |
+| Cache and sessions | PostgreSQL tables                   | Redis adapter                                                              |
+| Pages              | Server-rendered with built-in cache | Same, behind a CDN with tag-based purge                                    |
+| Files              | Local disk                          | S3-compatible storage                                                      |
 
 Rules that make this possible, enforced from M0:
 
@@ -605,6 +605,7 @@ test levels green, the QA report, Notion and `PROGRESS.md` updated.
   7. optional sample data
 
   The page needs a one-time token printed in the terminal and locks itself when finished.
+
 - Sample third-party module used as the contract test.
 
 **Done when** a fresh install reaches a working (empty) shop through the setup page for `minimal`
@@ -839,40 +840,40 @@ Date: 2026-11-15 · Approved by Iman on 2026-11-15.
 Source: the 410 packages in this Magento 2.4.9 install, plus Adobe Commerce's feature list (Adobe
 Commerce code is not in this install, so that part is from documentation, not from code).
 
-| Area | Magento modules | AI Commerce module | Milestone |
-|---|---|---|---|
-| Framework, DI, plugins, events, cron, queue, cache, indexer | framework, cron, message-queue, amqp, indexer, cache-invalidate, page-cache | `core` | M0 |
-| Admin users, roles, ACL, 2FA, captcha, security | user, authorization, backend, security, two-factor-auth, captcha, re-captcha-* | `core`, `auth` | M0 |
-| Admin UI | ui, backend, theme-adminhtml-backend | `admin`, `ai` | M1 |
-| Catalog, attributes, categories, media | catalog, eav, media-gallery-*, media-storage, product-video, swatches | `catalog`, `media` | M1 |
-| Configurable products | configurable-product | `catalog` | M1 |
-| Search, layered navigation | catalog-search, search, elasticsearch, open-search, layered-navigation, advanced-search | `search` | M1 |
-| Storefront theme | theme, theme-frontend-luma, require-js, widget | `storefront`, `ui` | M1 |
-| URL rewrites, SEO | url-rewrite, catalog-url-rewrite, cms-url-rewrite, sitemap, robots | `seo` | M1, M9 |
-| Customers, addresses, groups | customer, persistent, login-as-customer-* | `customer` | M2 |
-| Cart, checkout | quote, checkout, checkout-agreements, multishipping, instant-purchase, gift-message | `cart`, `checkout` | M2, M10 |
-| Orders, invoices, shipments, credit memos | sales, sales-sequence, order-cancellation | `sales` | M2 |
-| Payments | payment, offline-payments, paypal, payment-services-*, vault, cardinal-commerce | `payment`, `payment-*` | M2, M10 |
-| Shipping | shipping, offline-shipping, ups, usps, fedex, dhl | `shipping`, `shipping-*` | M2, M10 |
-| Tax | tax, weee | `tax` | M2, M6 |
-| Email | email, variable, newsletter | `email`, `newsletter` | M2, M9 |
-| CMS, page builder | cms, page-builder, widget | `content` | M4 |
-| Price rules, coupons, tier and group prices, MSRP | catalog-rule, sales-rule, rule, msrp | `promotions`, `pricing` | M5 |
-| Websites, stores, locales, currencies, translation | store, directory, currency-symbol, translation, language-* | `channels`, `i18n` | M6 |
-| Multi-source inventory, pickup | inventory-* (about 90 packages), catalog-inventory | `inventory` | M7 |
-| Bundle, grouped, downloadable, virtual products | bundle, grouped-product, downloadable | `catalog-*` | M8 |
-| Wishlist, compare, reviews, alerts, related products, send to friend | wishlist, review, product-alert, send-friend, compare-list-graph-ql | `engagement` | M8 |
-| Reports, analytics, tracking | reports, analytics, google-gtag, google-analytics, new-relic-reporting | `reports`, `tracking` | M9 |
-| RSS, contact form, cookies | rss, contact, cookie | `content` | M9 |
-| Import, export | import-export, *-import-export | `data` | M10 |
-| API, integrations, webhooks | webapi, graph-ql, *-graph-ql, integration, swagger | `core` (generated), `integrations` | M0, M10 |
-| Remote storage | remote-storage, aws-s3 | `media` | M10 |
-| B2B: companies, shared catalogs, quotes, requisition lists, quick order, approvals, payment on account | Adobe Commerce | `b2b` | M11 |
-| Customer segments, dynamic blocks, related product rules | Adobe Commerce | `segments` | M11 |
-| Content staging, scheduled changes, preview | Adobe Commerce | `staging` | M11 |
-| RMA, store credit, reward points, gift cards, gift registry, gift wrapping | Adobe Commerce | `returns`, `loyalty`, `giftcard` | M11 |
-| Private sales, visual merchandiser, admin action log | Adobe Commerce | `events`, `merchandising`, `core` audit | M11 |
-| Live search, product recommendations | Adobe Commerce services | `search`, `ai` | M11 |
+| Area                                                                                                   | Magento modules                                                                         | AI Commerce module                      | Milestone |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- | --------------------------------------- | --------- |
+| Framework, DI, plugins, events, cron, queue, cache, indexer                                            | framework, cron, message-queue, amqp, indexer, cache-invalidate, page-cache             | `core`                                  | M0        |
+| Admin users, roles, ACL, 2FA, captcha, security                                                        | user, authorization, backend, security, two-factor-auth, captcha, re-captcha-*          | `core`, `auth`                          | M0        |
+| Admin UI                                                                                               | ui, backend, theme-adminhtml-backend                                                    | `admin`, `ai`                           | M1        |
+| Catalog, attributes, categories, media                                                                 | catalog, eav, media-gallery-*, media-storage, product-video, swatches                   | `catalog`, `media`                      | M1        |
+| Configurable products                                                                                  | configurable-product                                                                    | `catalog`                               | M1        |
+| Search, layered navigation                                                                             | catalog-search, search, elasticsearch, open-search, layered-navigation, advanced-search | `search`                                | M1        |
+| Storefront theme                                                                                       | theme, theme-frontend-luma, require-js, widget                                          | `storefront`, `ui`                      | M1        |
+| URL rewrites, SEO                                                                                      | url-rewrite, catalog-url-rewrite, cms-url-rewrite, sitemap, robots                      | `seo`                                   | M1, M9    |
+| Customers, addresses, groups                                                                           | customer, persistent, login-as-customer-*                                               | `customer`                              | M2        |
+| Cart, checkout                                                                                         | quote, checkout, checkout-agreements, multishipping, instant-purchase, gift-message     | `cart`, `checkout`                      | M2, M10   |
+| Orders, invoices, shipments, credit memos                                                              | sales, sales-sequence, order-cancellation                                               | `sales`                                 | M2        |
+| Payments                                                                                               | payment, offline-payments, paypal, payment-services-*, vault, cardinal-commerce         | `payment`, `payment-*`                  | M2, M10   |
+| Shipping                                                                                               | shipping, offline-shipping, ups, usps, fedex, dhl                                       | `shipping`, `shipping-*`                | M2, M10   |
+| Tax                                                                                                    | tax, weee                                                                               | `tax`                                   | M2, M6    |
+| Email                                                                                                  | email, variable, newsletter                                                             | `email`, `newsletter`                   | M2, M9    |
+| CMS, page builder                                                                                      | cms, page-builder, widget                                                               | `content`                               | M4        |
+| Price rules, coupons, tier and group prices, MSRP                                                      | catalog-rule, sales-rule, rule, msrp                                                    | `promotions`, `pricing`                 | M5        |
+| Websites, stores, locales, currencies, translation                                                     | store, directory, currency-symbol, translation, language-*                              | `channels`, `i18n`                      | M6        |
+| Multi-source inventory, pickup                                                                         | inventory-* (about 90 packages), catalog-inventory                                      | `inventory`                             | M7        |
+| Bundle, grouped, downloadable, virtual products                                                        | bundle, grouped-product, downloadable                                                   | `catalog-*`                             | M8        |
+| Wishlist, compare, reviews, alerts, related products, send to friend                                   | wishlist, review, product-alert, send-friend, compare-list-graph-ql                     | `engagement`                            | M8        |
+| Reports, analytics, tracking                                                                           | reports, analytics, google-gtag, google-analytics, new-relic-reporting                  | `reports`, `tracking`                   | M9        |
+| RSS, contact form, cookies                                                                             | rss, contact, cookie                                                                    | `content`                               | M9        |
+| Import, export                                                                                         | import-export, *-import-export                                                          | `data`                                  | M10       |
+| API, integrations, webhooks                                                                            | webapi, graph-ql, *-graph-ql, integration, swagger                                      | `core` (generated), `integrations`      | M0, M10   |
+| Remote storage                                                                                         | remote-storage, aws-s3                                                                  | `media`                                 | M10       |
+| B2B: companies, shared catalogs, quotes, requisition lists, quick order, approvals, payment on account | Adobe Commerce                                                                          | `b2b`                                   | M11       |
+| Customer segments, dynamic blocks, related product rules                                               | Adobe Commerce                                                                          | `segments`                              | M11       |
+| Content staging, scheduled changes, preview                                                            | Adobe Commerce                                                                          | `staging`                               | M11       |
+| RMA, store credit, reward points, gift cards, gift registry, gift wrapping                             | Adobe Commerce                                                                          | `returns`, `loyalty`, `giftcard`        | M11       |
+| Private sales, visual merchandiser, admin action log                                                   | Adobe Commerce                                                                          | `events`, `merchandising`, `core` audit | M11       |
+| Live search, product recommendations                                                                   | Adobe Commerce services                                                                 | `search`, `ai`                          | M11       |
 
 | Migration from other platforms | Data Migration Tool (Magento 1 only) | `migrate` | M3, extended in every later milestone |
 
@@ -882,31 +883,31 @@ The AI Commerce column lists design targets. Nothing in it is a measured result 
 tests each row against this Magento 2.4.9 install and against current Shopify and Shopware. The
 Shopify and Shopware columns are from general knowledge on 2026-11-15 and are re-checked in M12.
 
-| | Magento 2.4.9 | Shopify | Shopware 6 | AI Commerce (target) | How M12 proves it |
-|---|---|---|---|---|---|
-| Source and licence | Open source (OSL), paid Adobe Commerce edition | Closed, hosted only | Open source core, paid plans for advanced features | Open source, MIT, every feature free | Licence file |
-| Hosting | Self-hosted or Adobe cloud | Shopify only | Self-hosted or cloud | Self-hosted, one container to many | Install from zero |
-| Languages a developer needs | PHP, XML, Knockout, RequireJS, LESS | Liquid, plus any language for apps | PHP, Twig, Vue | TypeScript only | Languages in one module |
-| Files to add one admin-managed entity with API | About 20 to 30 | Not possible inside the platform; needs an external app | About 10 to 15 | One schema file, one actions file | Same sample module built on each |
-| Changing core behaviour | Plugins on any public method, observers, preferences | Limited to what the APIs and Functions expose | Decorators, events, subscribers | Typed events and named pipelines, fully inspectable | `inspect` shows the full chain |
-| Custom fields | EAV, extension attributes | Metafields | Custom fields | Typed attributes, created in code or by the merchant | Queries per product page |
-| Services needed to run | PHP, MySQL, OpenSearch, Redis, RabbitMQ, Varnish | None (hosted) | PHP, MySQL, OpenSearch optional | Node, PostgreSQL | Fresh install |
-| Install | Command line, many steps | Sign up | Web installer | One command, then a web setup page with a feature picker | Timed install |
-| Small shop | Same heavy install for everyone | Good | Reasonable | `minimal` and `starter` presets, set up by conversation | Time from install to first order |
-| Very large shop | Proven | Proven on Plus | Proven | Same code, scaled deployment | Load test with 1M products, published numbers |
-| Admin | About 200 form and grid screens | Polished screens, AI assistant alongside | Modern screens, AI features in paid plans | Chat first, with artifacts; generated screens as fallback | 10 scripted admin tasks, timed |
-| Editing on the storefront | No | Theme editor for layout | Shopping Experiences editor | Inline edit of any content on the real page | Same 10 tasks |
-| AI coverage of admin actions | None in core | Partial, vendor-chosen | Partial, paid | Every action, including third-party modules, automatically | Share of actions reachable by chat |
-| Choice of AI provider | Not applicable | No | No | Gemini, Claude, OpenAI, by configuration | Same script on three providers |
-| Open to external AI agents | No | Vendor-run | No | MCP endpoint generated from the same actions | Connect an external client |
-| API | REST and GraphQL written per module | Good, versioned | Good | Generated from actions, always complete | Share of actions with an endpoint |
-| Explain a price or total | No | No | No | Step-by-step trace | Checkout test |
-| Undo and history | Limited | Limited | Limited | Every entity | Restore test |
-| Storefront speed | Luma theme is heavy | Good | Good | Lighthouse 95+ on the default theme | Lighthouse, same catalog |
-| Accessibility | Partial | Depends on theme | Improving | WCAG 2.2 AA | Audit |
-| Migration in | From Magento 1 | Importer apps | Migration assistant (Magento, Shopware 5) | Magento, Shopify, Shopware, CSV, with dry run and re-sync | Import three real shops |
-| Fees | Free core; Adobe Commerce is costly | Monthly plan plus transaction fees | Free core; paid plans | None | Not applicable |
-| Extensions available | Thousands | Thousands | Thousands | None at launch | Where we are behind |
-| Track record | 15+ years | 15+ years | 10+ years | New | Where we are behind |
+|                                                | Magento 2.4.9                                        | Shopify                                                 | Shopware 6                                         | AI Commerce (target)                                       | How M12 proves it                             |
+| ---------------------------------------------- | ---------------------------------------------------- | ------------------------------------------------------- | -------------------------------------------------- | ---------------------------------------------------------- | --------------------------------------------- |
+| Source and licence                             | Open source (OSL), paid Adobe Commerce edition       | Closed, hosted only                                     | Open source core, paid plans for advanced features | Open source, MIT, every feature free                       | Licence file                                  |
+| Hosting                                        | Self-hosted or Adobe cloud                           | Shopify only                                            | Self-hosted or cloud                               | Self-hosted, one container to many                         | Install from zero                             |
+| Languages a developer needs                    | PHP, XML, Knockout, RequireJS, LESS                  | Liquid, plus any language for apps                      | PHP, Twig, Vue                                     | TypeScript only                                            | Languages in one module                       |
+| Files to add one admin-managed entity with API | About 20 to 30                                       | Not possible inside the platform; needs an external app | About 10 to 15                                     | One schema file, one actions file                          | Same sample module built on each              |
+| Changing core behaviour                        | Plugins on any public method, observers, preferences | Limited to what the APIs and Functions expose           | Decorators, events, subscribers                    | Typed events and named pipelines, fully inspectable        | `inspect` shows the full chain                |
+| Custom fields                                  | EAV, extension attributes                            | Metafields                                              | Custom fields                                      | Typed attributes, created in code or by the merchant       | Queries per product page                      |
+| Services needed to run                         | PHP, MySQL, OpenSearch, Redis, RabbitMQ, Varnish     | None (hosted)                                           | PHP, MySQL, OpenSearch optional                    | Node, PostgreSQL                                           | Fresh install                                 |
+| Install                                        | Command line, many steps                             | Sign up                                                 | Web installer                                      | One command, then a web setup page with a feature picker   | Timed install                                 |
+| Small shop                                     | Same heavy install for everyone                      | Good                                                    | Reasonable                                         | `minimal` and `starter` presets, set up by conversation    | Time from install to first order              |
+| Very large shop                                | Proven                                               | Proven on Plus                                          | Proven                                             | Same code, scaled deployment                               | Load test with 1M products, published numbers |
+| Admin                                          | About 200 form and grid screens                      | Polished screens, AI assistant alongside                | Modern screens, AI features in paid plans          | Chat first, with artifacts; generated screens as fallback  | 10 scripted admin tasks, timed                |
+| Editing on the storefront                      | No                                                   | Theme editor for layout                                 | Shopping Experiences editor                        | Inline edit of any content on the real page                | Same 10 tasks                                 |
+| AI coverage of admin actions                   | None in core                                         | Partial, vendor-chosen                                  | Partial, paid                                      | Every action, including third-party modules, automatically | Share of actions reachable by chat            |
+| Choice of AI provider                          | Not applicable                                       | No                                                      | No                                                 | Gemini, Claude, OpenAI, by configuration                   | Same script on three providers                |
+| Open to external AI agents                     | No                                                   | Vendor-run                                              | No                                                 | MCP endpoint generated from the same actions               | Connect an external client                    |
+| API                                            | REST and GraphQL written per module                  | Good, versioned                                         | Good                                               | Generated from actions, always complete                    | Share of actions with an endpoint             |
+| Explain a price or total                       | No                                                   | No                                                      | No                                                 | Step-by-step trace                                         | Checkout test                                 |
+| Undo and history                               | Limited                                              | Limited                                                 | Limited                                            | Every entity                                               | Restore test                                  |
+| Storefront speed                               | Luma theme is heavy                                  | Good                                                    | Good                                               | Lighthouse 95+ on the default theme                        | Lighthouse, same catalog                      |
+| Accessibility                                  | Partial                                              | Depends on theme                                        | Improving                                          | WCAG 2.2 AA                                                | Audit                                         |
+| Migration in                                   | From Magento 1                                       | Importer apps                                           | Migration assistant (Magento, Shopware 5)          | Magento, Shopify, Shopware, CSV, with dry run and re-sync  | Import three real shops                       |
+| Fees                                           | Free core; Adobe Commerce is costly                  | Monthly plan plus transaction fees                      | Free core; paid plans                              | None                                                       | Not applicable                                |
+| Extensions available                           | Thousands                                            | Thousands                                               | Thousands                                          | None at launch                                             | Where we are behind                           |
+| Track record                                   | 15+ years                                            | 15+ years                                               | 10+ years                                          | New                                                        | Where we are behind                           |
 
 The last two rows are where every competitor is ahead and will stay ahead for some time.

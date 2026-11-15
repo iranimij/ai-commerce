@@ -24,21 +24,21 @@ Shopify and Shopware, for shops of any size.
 
 ## Roadmap
 
-| # | Milestone |
-|---|---|
-| M0 | Foundation: core, auth, CLI, design system, installer |
-| M1 | Catalog, storefront, AI admin |
-| M2 | Selling: checkout, payments, shipping, tax, orders |
-| M3 | Migration from Magento, Shopify, Shopware |
-| M4 | Content and page builder |
-| M5 | Promotions and pricing |
-| M6 | Channels and languages |
-| M7 | Inventory |
-| M8 | More product types and engagement |
-| M9 | Marketing and reports |
-| M10 | Integrations and operations |
-| M11 | Adobe Commerce parity (B2B and more) |
-| M12 | Benchmarks, audits, version 1.0 |
+| #   | Milestone                                             |
+| --- | ----------------------------------------------------- |
+| M0  | Foundation: core, auth, CLI, design system, installer |
+| M1  | Catalog, storefront, AI admin                         |
+| M2  | Selling: checkout, payments, shipping, tax, orders    |
+| M3  | Migration from Magento, Shopify, Shopware             |
+| M4  | Content and page builder                              |
+| M5  | Promotions and pricing                                |
+| M6  | Channels and languages                                |
+| M7  | Inventory                                             |
+| M8  | More product types and engagement                     |
+| M9  | Marketing and reports                                 |
+| M10 | Integrations and operations                           |
+| M11 | Adobe Commerce parity (B2B and more)                  |
+| M12 | Benchmarks, audits, version 1.0                       |
 
 ## Licence
 

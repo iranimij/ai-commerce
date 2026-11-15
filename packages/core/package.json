@@ -1,0 +1,21 @@
+{
+  "name": "@aicommerce/core",
+  "version": "0.0.0",
+  "description": "AI Commerce core: modules, actions, events and pipelines",
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  }
+}
