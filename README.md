@@ -1,5 +1,8 @@
 # AI Commerce
 
+[![CI](https://github.com/iranimij/ai-commerce/actions/workflows/ci.yml/badge.svg)](https://github.com/iranimij/ai-commerce/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 An open-source, AI-native e-commerce platform. A modern TypeScript replacement for Magento,
 Shopify and Shopware, for shops of any size.
 
@@ -39,6 +42,18 @@ Shopify and Shopware, for shops of any size.
 | M10 | Integrations and operations                           |
 | M11 | Adobe Commerce parity (B2B and more)                  |
 | M12 | Benchmarks, audits, version 1.0                       |
+
+## Development
+
+You need Docker and git. Nothing else is installed on your machine.
+
+```sh
+./dev pnpm install
+./dev pnpm test
+```
+
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the full workflow and
+[SECURITY.md](SECURITY.md) for reporting security problems.
 
 ## Licence
 
