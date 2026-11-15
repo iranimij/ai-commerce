@@ -2,6 +2,7 @@ import type { z } from 'zod'
 import type { Actor } from './actor.js'
 import type { EventBus } from './events.js'
 import type { Pipelines } from './pipeline.js'
+import type { ServiceDefinition } from './service.js'
 
 export type Risk = 'read' | 'write' | 'destructive'
 
@@ -11,6 +12,8 @@ export interface ActionContext {
   /** Run another module's extension points from inside a handler. */
   pipelines: Pipelines
   events: EventBus
+  /** The implementation of a service; throws if no enabled module or default provides it. */
+  service: <T>(def: ServiceDefinition<T>) => T
 }
 
 export interface ActionDefinition<
