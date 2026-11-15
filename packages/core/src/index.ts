@@ -21,7 +21,9 @@ export {
   type Step,
   type TraceEntry,
 } from './pipeline.js'
-export { createApp, type ActionInfo, type App, type AppOptions } from './app.js'
+export { createApp, type ActionInfo, type App, type AppOptions, type ServiceInfo } from './app.js'
 export { defineModule, type ActionWrap, type ModuleDefinition } from './module.js'
 export { type RegistryOptions } from './registry.js'
+export { ActionError, type HandlerErrorCode } from './errors.js'
+export { defineService, provide, type ServiceDefinition, type ServiceProvision } from './service.js'
 export { describeInvalidInput, redactInput, type AuditEntry, type AuditSink } from './audit.js'

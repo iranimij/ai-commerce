@@ -193,3 +193,56 @@ describe('createApp', () => {
     expect(transactions).toBe(1)
   })
 })
+
+describe('shared state cannot be changed', () => {
+  test('shared actors cannot gain permissions', async () => {
+    const { can, guestActor } = await import('./actor.js')
+    expect(() => (guestActor.permissions as Set<string>).add('*')).toThrow(TypeError)
+    expect(can(guestActor, 'x')).toBe(false)
+  })
+
+  test('a wrap cannot change ctx', async () => {
+    const r = createRegistry(quiet)
+    r.register(action())
+    r.addWrap({
+      action: 'test.run',
+      module: 'w',
+      order: 1,
+      wrap: (input, ctx, next) => {
+        ;(ctx as { actor: unknown }).actor = systemActor
+        return next(input)
+      },
+    })
+    expect(await r.call('test.run', {}, actor)).toMatchObject({
+      ok: false,
+      error: { code: 'handler_error' },
+    })
+  })
+
+  test('a wrap calling next twice fails the call', async () => {
+    let runs = 0
+    const r = createRegistry(quiet)
+    r.register(
+      action({
+        handler: () => {
+          runs++
+          return Promise.resolve({})
+        },
+      }),
+    )
+    r.addWrap({
+      action: 'test.run',
+      module: 'w',
+      order: 1,
+      wrap: async (input, _ctx, next) => {
+        await next(input)
+        return next(input)
+      },
+    })
+    expect(await r.call('test.run', {}, actor)).toMatchObject({
+      ok: false,
+      error: { code: 'handler_error' },
+    })
+    expect(runs).toBe(1)
+  })
+})

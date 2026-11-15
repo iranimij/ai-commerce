@@ -1,7 +1,12 @@
 import type { z } from 'zod'
 
 export type ErrorCode =
-  'not_found' | 'invalid_input' | 'forbidden' | 'confirmation_required' | 'handler_error'
+  | 'not_found'
+  | 'invalid_input'
+  | 'forbidden'
+  | 'conflict'
+  | 'confirmation_required'
+  | 'handler_error'
 
 export interface CallError {
   code: ErrorCode

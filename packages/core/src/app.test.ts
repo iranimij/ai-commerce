@@ -260,3 +260,50 @@ describe('inspect', () => {
     expect(app.inspect('event', 'order.placed')).toEqual([{ module: 'm' }])
   })
 })
+
+describe('namespaces and wrap targets', () => {
+  test('an action outside the module namespaces is rejected', () => {
+    const bad = defineModule({ name: 'b', actions: [echo('a.x')] })
+    expect(() => createApp({ modules: [bad], enabled: ['b'] })).toThrow(
+      'Module "b" cannot declare action "a.x": namespace "a" is not declared by module "b"',
+    )
+  })
+
+  test('a module may declare extra namespaces', () => {
+    const shop = defineModule({
+      name: 'shop',
+      namespaces: ['shop', 'cart'],
+      actions: [echo('cart.view')],
+    })
+    expect(
+      createApp({ modules: [shop], enabled: ['shop'] }).registry.get('cart.view'),
+    ).toBeDefined()
+  })
+
+  test('two modules claiming one namespace fail', () => {
+    const one = defineModule({ name: 'one', namespaces: ['x'] })
+    const two = defineModule({ name: 'two', namespaces: ['x'] })
+    expect(() => createApp({ modules: [one, two], enabled: ['one', 'two'] })).toThrow(
+      'Namespace "x" is claimed by modules "one" and "two"',
+    )
+  })
+
+  const wrapOf = (module: string, action: string) => ({
+    action,
+    module,
+    order: 1,
+    wrap: (input: never, _ctx: unknown, next: (i: unknown) => Promise<unknown>) => next(input),
+  })
+
+  test('a wrap must target a module it depends on', () => {
+    const w = defineModule({ name: 'w', wraps: [wrapOf('w', 'a.act')] })
+    expect(() => createApp({ modules: [a, w], enabled: ['a', 'w'] })).toThrow(
+      'Module "w" wraps "a.act" but does not depend on module "a"',
+    )
+  })
+
+  test('a transitive dependency is enough to wrap', () => {
+    const w = defineModule({ name: 'w', depends: ['b'], wraps: [wrapOf('w', 'a.act')] })
+    expect(() => createApp({ modules: [a, b, w], enabled: ['a', 'b', 'w'] })).not.toThrow()
+  })
+})

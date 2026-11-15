@@ -10,16 +10,40 @@ export interface Actor {
   onBehalfOf?: string
 }
 
+/** A permission set that throws on any change, for actors shared across calls. */
+class FrozenSet<T> extends Set<T> {
+  #sealed = false
+
+  constructor(values: Iterable<T>) {
+    super()
+    for (const value of values) super.add(value)
+    this.#sealed = true
+  }
+
+  override add(value: T): this {
+    if (this.#sealed) throw new TypeError('This permission set cannot be changed')
+    return super.add(value)
+  }
+
+  override delete(): boolean {
+    throw new TypeError('This permission set cannot be changed')
+  }
+
+  override clear(): void {
+    throw new TypeError('This permission set cannot be changed')
+  }
+}
+
 export const systemActor: Actor = Object.freeze({
   type: 'system',
   id: null,
-  permissions: new Set<string>(['*']),
+  permissions: new FrozenSet(['*']),
 })
 
 export const guestActor: Actor = Object.freeze({
   type: 'guest',
   id: null,
-  permissions: new Set<string>(),
+  permissions: new FrozenSet<string>([]),
 })
 
 /** `null` means the action is public. */

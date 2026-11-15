@@ -2,10 +2,12 @@ import type { z } from 'zod'
 import type { ActionContext, ActionDefinition } from './action.js'
 import { can, type Actor, type ActorType } from './actor.js'
 import { describeInvalidInput, redactInput, type AuditSink } from './audit.js'
+import { ActionError } from './errors.js'
 import { createEventBus, type EventBus } from './events.js'
 import type { ActionWrap } from './module.js'
 import { createPipelines, type Pipelines } from './pipeline.js'
 import { fail, type Result } from './result.js'
+import type { ServiceDefinition } from './service.js'
 
 export interface CallOptions {
   actor: Actor
@@ -35,6 +37,8 @@ export interface RegistryOptions {
   onError?: (error: unknown, info: { action: string; actorType: ActorType }) => void
   /** Runs write and destructive handlers inside a database transaction. */
   transaction?: <T>(fn: () => Promise<T>) => Promise<T>
+  /** Resolves services for `ctx.service`. Used by `createApp`. */
+  service?: <T>(def: ServiceDefinition<T>) => T
 }
 
 const ACTION_NAME = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/
@@ -120,6 +124,11 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
     ((error: unknown) => {
       console.error('Audit write failed', error)
     })
+  const service =
+    options.service ??
+    (<T>(def: ServiceDefinition<T>): T => {
+      throw new Error(`Service "${def.name}" is not provided`)
+    })
   const actions = new Map<string, ActionDefinition>()
   // Strict copies of each action's input schema, made once at register.
   const inputs = new Map<string, z.ZodType>()
@@ -155,7 +164,18 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
       return action.handler(checked.data as Record<string, unknown>, ctx)
     }
     return (wrapsByAction.get(action.name) ?? []).reduceRight<(input: unknown) => Promise<unknown>>(
-      (next, w) => (input) => w.wrap(input as never, ctx, next),
+      (next, w) => (input) => {
+        let called = false
+        return w.wrap(input as never, ctx, (nextInput) => {
+          if (called) {
+            return Promise.reject(
+              new Error(`next() called twice by a wrap of module "${w.module}"`),
+            )
+          }
+          called = true
+          return next(nextInput)
+        })
+      },
       inner,
     )
   }
@@ -181,12 +201,14 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
         return fail('confirmation_required', `"${name}" must be confirmed before it runs`)
       }
 
-      const ctx: ActionContext = {
+      // Frozen: a wrap must not change who is calling or what the handler can reach.
+      const ctx: ActionContext = Object.freeze({
         actor: callOptions.actor,
         actionName: name,
         pipelines,
         events: deferredEvents(queue),
-      }
+        service,
+      })
       // Output is checked before the transaction ends, so bad output rolls back too.
       const run = async (): Promise<unknown> => {
         const output = await chain(action, schema, ctx)(parsed.data)
@@ -200,6 +222,7 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
       return { ok: true, output }
     } catch (error) {
       queue.length = 0
+      if (error instanceof ActionError) return fail(error.code, error.message, error.issues)
       onError(error, { action: name, actorType: callOptions.actor.type })
       // The error may hold internals; callers get a generic message.
       return fail('handler_error', 'Action failed')
