@@ -227,9 +227,45 @@ Every AI task names a **role**, and settings map each role to a provider and mod
   the features that use the role.
 - Usage and cost are recorded per role, with a monthly cap per role.
 
-Training our own models is not scheduled. The earliest it makes sense is after M8, when there is
-real catalog, order and review data to train and evaluate on. Until then the roles run on
-provider models.
+### Open models running locally
+
+Iman, 2026-11-15: use well-known open-source models from Hugging Face for work that can be done
+on the shop's own server.
+
+- An optional `models` container in the Compose file serves open models through the same API
+  shape as the hosted providers, so a role is pointed at it with one setting.
+- Good fits: `moderation`, `embedding`, `vision`, `forecast`. No API cost, and customer data
+  never leaves the server.
+- The `assistant` role still needs a strong model. Small local models are not reliable at
+  choosing and calling actions, and a wrong action is worse than a slow one.
+- The installer offers three choices: hosted provider only, local models for the supporting
+  roles, or no AI.
+- Arrives in M1 with the first roles that can use it (embedding, vision).
+
+### Our own models, published as AI Commerce on Hugging Face
+
+Iman, 2026-11-15: AI Commerce should have its own models, published under the brand so other
+shops and developers can use them too.
+
+A separate model track that runs beside the milestones:
+
+| # | Model | What it does | Trained on | When |
+|---|---|---|---|---|
+| X1 | Product embedding model | Related products and meaning-based search tuned to shopping language | Public product and query data with a licence that allows it | After M2 |
+| X2 | Review moderator | Spam, abuse and sentiment for product reviews | Public review data plus labelled examples | After M8 |
+| X3 | Commerce assistant | A small model tuned to call shop actions, for running the chat locally | Recorded and synthetic chat-to-action examples | After M11, only if X1 and X2 proved worthwhile |
+
+Rules for every model:
+
+- It starts from an open model with a licence that allows fine-tuning and redistribution.
+- Training data licences are checked and listed on the model card.
+- It is published only if it beats the open model it replaces on a written, repeatable test.
+  The test and the numbers go on the model card.
+- It plugs in as a provider for its role. No feature depends on it.
+
+Limits, stated plainly: training needs rented GPU time, which costs money, and a general chat
+model that rivals Gemini or Claude is out of reach and not planned. Small specialised models are
+realistic.
 
 ## 4. Architecture
 

@@ -33,3 +33,5 @@ M0 Foundation:
 - Gemini API key (M1): create in the browser, store in a git-ignored `.env`.
 - Shopify development store for M3 testing: Iman provides.
 - Visual identity: three proposals in M0 for Iman to choose from.
+- Model track (X1 to X3): own models on Hugging Face; needs a Hugging Face organisation and a
+  GPU budget from Iman when X1 starts (after M2).
