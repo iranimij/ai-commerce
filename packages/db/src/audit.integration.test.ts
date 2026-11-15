@@ -1,4 +1,12 @@
-import { createRegistry, defineAction, guestActor, type Actor } from '@aicommerce/core'
+import {
+  createApp,
+  createRegistry,
+  defineAction,
+  defineEvent,
+  defineModule,
+  guestActor,
+  type Actor,
+} from '@aicommerce/core'
 import { sql } from 'drizzle-orm'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { z } from 'zod'
@@ -65,7 +73,10 @@ test('a forbidden call is audited', async () => {
 
 test('an invalid call is audited', async () => {
   await registry().call('note.add', { body: 1 }, { actor: admin })
-  expect(await lastEntry()).toMatchObject({ outcome: 'invalid_input', input: { body: 1 } })
+  expect(await lastEntry()).toMatchObject({
+    outcome: 'invalid_input',
+    input: { '[invalid input]': ['body'] },
+  })
 })
 
 test('a throwing handler rolls back its writes but is audited as handler_error', async () => {
@@ -95,4 +106,63 @@ test('audit rows cannot be updated, deleted or truncated', async () => {
   await expect(database.client`delete from audit_log`).rejects.toThrow('audit_log is append-only')
   await expect(database.client`truncate audit_log`).rejects.toThrow('audit_log is append-only')
   expect((await database.client`select count(*)::int as n from audit_log`)[0]?.n).toBeGreaterThan(0)
+})
+
+test('input PostgreSQL cannot store is cleaned, so the call is still audited', async () => {
+  await createDbAuditSink(database).write({
+    actorType: 'guest',
+    actorId: null,
+    onBehalfOf: null,
+    action: 'note.add',
+    input: { nul: 'a\u0000b', surrogate: '\ud800' },
+    outcome: 'invalid_input',
+    durationMs: 0,
+  })
+  expect((await lastEntry())?.input).toEqual({ nul: 'ab', surrogate: '\ufffd' })
+})
+
+test('a subscriber whose SQL fails does not undo the action', async () => {
+  const added = defineEvent('note.added', z.object({ body: z.string() }))
+  const notes = defineModule({
+    name: 'note',
+    actions: [
+      defineAction({
+        name: 'note.post',
+        description: 'Add a note and announce it',
+        input: z.object({ body: z.string() }),
+        output: z.object({}),
+        permission: null,
+        risk: 'write',
+        handler: async (input, ctx) => {
+          await database.current().execute(sql`insert into note (body) values (${input.body})`)
+          await ctx.events.emit(added, { body: input.body })
+          return {}
+        },
+      }),
+    ],
+  })
+  const listener = defineModule({
+    name: 'listener',
+    depends: ['note'],
+    subscribers: [
+      {
+        event: added,
+        module: 'listener',
+        handler: async () => {
+          await database.current().execute(sql`select * from no_such_table`)
+        },
+      },
+    ],
+  })
+  const app = createApp({
+    modules: [notes, listener],
+    enabled: ['note', 'listener'],
+    audit: createDbAuditSink(database),
+    transaction: database.transaction,
+    onEventError: () => undefined,
+  })
+  const result = await app.registry.call('note.post', { body: 'survives' }, { actor: admin })
+  expect(result.ok).toBe(true)
+  expect(await database.client`select * from note where body = 'survives'`).toHaveLength(1)
+  expect(await lastEntry()).toMatchObject({ action: 'note.post', outcome: 'ok' })
 })

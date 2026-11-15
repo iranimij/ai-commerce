@@ -53,7 +53,8 @@ export async function runMigrations(
           await connection`insert into migrations (module, name) values (${source.module}, ${file})`
           await connection.unsafe('commit')
         } catch (error) {
-          await connection.unsafe('rollback')
+          // If the connection is gone, rollback fails too; report the migration, not that.
+          await connection.unsafe('rollback').catch(() => undefined)
           throw new Error(`Migration ${source.module}/${file} failed`, { cause: error })
         }
         applied.push(`${source.module}/${file}`)
@@ -61,7 +62,12 @@ export async function runMigrations(
     }
     return applied
   } finally {
-    await connection`select pg_advisory_unlock(${MIGRATION_LOCK})`
-    connection.release()
+    try {
+      await connection`select pg_advisory_unlock(${MIGRATION_LOCK})`
+    } catch {
+      // A lost connection has released the lock already.
+    } finally {
+      connection.release()
+    }
   }
 }

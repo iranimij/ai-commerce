@@ -64,3 +64,12 @@ test('two runs at the same time apply each migration once', async () => {
   ])
   expect([...x, ...y]).toEqual(['demo/0001_create.sql'])
 })
+
+test('a migration that loses its connection reports the migration, not the cleanup', async () => {
+  const dir = await migrationDir({
+    '0001_disconnect.sql': 'select pg_terminate_backend(pg_backend_pid());',
+  })
+  await expect(runMigrations(database, [{ module: 'demo', dir }])).rejects.toThrow(
+    'Migration demo/0001_disconnect.sql failed',
+  )
+})

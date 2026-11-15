@@ -1,8 +1,8 @@
 import type { ActionDefinition } from './action.js'
-import { createEventBus, type EventBus } from './events.js'
+import { createEventBus, type EventBus, type EventBusOptions } from './events.js'
 import type { ModuleDefinition } from './module.js'
 import { createPipelines, type Pipelines } from './pipeline.js'
-import { createRegistry, type Registry } from './registry.js'
+import { createRegistry, type Registry, type RegistryOptions } from './registry.js'
 
 export interface ActionInfo {
   name: string
@@ -23,7 +23,12 @@ export interface App {
   inspect(kind: 'event', name: string): { module: string }[]
 }
 
-export interface AppOptions {
+export interface AppOptions extends Pick<
+  RegistryOptions,
+  'audit' | 'transaction' | 'onAuditError' | 'onError'
+> {
+  /** Reported when an event subscriber fails. Default: console.error. */
+  onEventError?: EventBusOptions['onError']
   modules: ModuleDefinition[]
   /** Names of the modules to load. Anything not listed contributes nothing. */
   enabled: string[]
@@ -79,8 +84,23 @@ function assertOwner(module: string, kind: string, owner: string): void {
 
 export function createApp(options: AppOptions): App {
   const pipelines = createPipelines()
-  const events = createEventBus()
-  const registry = createRegistry({ pipelines, events })
+  const { onEventError, audit, transaction, onAuditError, onError } = options
+  const events = createEventBus({
+    onError:
+      onEventError ??
+      ((error, info) => {
+        console.error(`Subscriber of ${info.module} failed on ${info.event}`, error)
+      }),
+  })
+  // Only the hooks that were given: exactOptionalPropertyTypes forbids passing undefined.
+  const registry = createRegistry({
+    pipelines,
+    events,
+    ...(audit && { audit }),
+    ...(transaction && { transaction }),
+    ...(onAuditError && { onAuditError }),
+    ...(onError && { onError }),
+  })
   const actionOwner = new Map<string, string>()
   const ordered = loadOrder(options)
 
