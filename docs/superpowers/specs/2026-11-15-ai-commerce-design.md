@@ -87,7 +87,8 @@ Answered by Iman on 2026-11-15:
   back with alternatives.
 - **Fully free under MIT**, including the Adobe Commerce level features.
 - **First market: global and Europe.** English first, Stripe and PayPal, EU tax and privacy rules.
-- **AI for the admin now; a shopper assistant later** as a module after M11.
+- ~~AI for the admin now; a shopper assistant later~~ Replaced on 2026-11-15: Iman wants a
+  customer chatbot. It is built in M2. See 3f.
 
 19. **Docker only** (Iman, 2026-11-15). Development, tests and local running happen entirely in
     containers defined by one Compose file: the Node app, PostgreSQL, a mail catcher, and the
@@ -218,6 +219,7 @@ Every AI task names a **role**, and settings map each role to a provider and mod
 | `embedding` | Related products, meaning-based search, recommendations | An embedding model |
 | `vision` | Image descriptions | A model that reads images |
 | `forecast` | Stock forecast, order risk | A small model, or plain statistics |
+| `shopper` | The customer chatbot on the storefront | Same as assistant, or a cheaper model |
 
 - A shop that sets only one model uses it for every role. Overriding a role is one setting.
 - A module can define a new role for its own feature.
@@ -251,9 +253,9 @@ A separate model track that runs beside the milestones:
 
 | # | Model | What it does | Trained on | When |
 |---|---|---|---|---|
-| X1 | Product embedding model | Related products and meaning-based search tuned to shopping language | Public product and query data with a licence that allows it | After M2 |
+| X1 | Product matcher (flagship) | Finds the best related products for a customer, in two steps: find candidates by meaning, then rank them against the cart, browsing, what is bought together, price range and stock, with a reason for each | Public product, query and co-purchase data with a licence that allows it | After M2 |
 | X2 | Review moderator | Spam, abuse and sentiment for product reviews | Public review data plus labelled examples | After M8 |
-| X3 | Commerce assistant | A small model tuned to call shop actions, for running the chat locally | Recorded and synthetic chat-to-action examples | After M11, only if X1 and X2 proved worthwhile |
+| X3 | Commerce assistant | A small model tuned to call shop actions, for running the admin chat and the shopper assistant locally | Recorded and synthetic chat-to-action examples | After M11, only if X1 and X2 proved worthwhile |
 
 Rules for every model:
 
@@ -266,6 +268,41 @@ Rules for every model:
 Limits, stated plainly: training needs rented GPU time, which costs money, and a general chat
 model that rivals Gemini or Claude is out of reach and not planned. Small specialised models are
 realistic.
+
+## 3f. The shopper assistant: a chatbot for customers
+
+Iman, 2026-11-15: customers must be able to chat with the shop, and it should be smart.
+
+Options considered:
+
+| | A. Hosted model with shop tools | B. Open model on the shop's server | C. Our own commerce model |
+|---|---|---|---|
+| How smart | Very, from day one | Good for questions and search, weaker at multi-step tasks | Unknown until trained and tested |
+| Cost to the merchant | Per conversation | A server with a GPU, no per-message fee | Same as B |
+| Customer data | Goes to the provider | Stays on the server | Stays on the server |
+| When | M2 | M2, as a setting | Model track X3 |
+
+**Chosen: A first, built so B and C are a setting** (my recommendation; Iman asked for options).
+The chatbot has its own model role, `shopper`.
+
+What it does, all through existing actions as the guest or logged-in customer:
+
+- Find and compare products, with suggestions from the product matcher.
+- Answer from the shop's own pages and policies (shipping, returns, sizes).
+- Check stock, add to cart, apply an existing coupon.
+- Show the customer their own orders and start a return.
+
+What keeps a public chatbot safe:
+
+- It acts as the visitor: it can do only what that visitor could do by clicking, and never sees
+  another customer's data.
+- It cannot invent discounts, change prices or promise anything outside shop policy.
+- It answers only from shop data and says so when it does not know.
+- Rate limits per visitor, an abuse filter, and a monthly cost cap per shop. When the cap is hit
+  the widget turns into a contact form.
+- It is labelled as an AI, hands over to a human by email on request, and the admin can read
+  every conversation.
+- It is a module: off by default in `minimal`, a tick in the installer.
 
 ## 4. Architecture
 
@@ -476,6 +513,7 @@ catalog three ways (chat, classic, inline); the same chat script passes on all t
 - Customer area: orders, addresses, account details.
 - Chat: "today's orders", "refund order 1042", "who has not paid", with artifacts.
 - `starter` preset complete, with chat-led setup for a small shop.
+- AI duties engine (3c) and the shopper assistant (3f).
 
 **Done when** a real test payment is taken, the order is invoiced, shipped and refunded, and every
 email arrives; a small shop goes from install to first order through the chat alone.
@@ -658,8 +696,6 @@ Per-milestone verification is each milestone's "Done when" plus the standards in
 
 - No product code is written in this chat; only the design, plans and repository setup.
 - No hosted service, no extension marketplace, no mobile app.
-- No AI shopping assistant for customers on the storefront. It fits the platform and can be added
-  as a module later.
 - WooCommerce and other import sources; the engine leaves room for them.
 
 Date: 2026-11-15 · Approved by Iman on 2026-11-15.
