@@ -8,6 +8,7 @@ import type { ActionWrap } from './module.js'
 import { createPipelines, type Pipelines } from './pipeline.js'
 import { fail, type Result } from './result.js'
 import type { ServiceDefinition } from './service.js'
+import { defOf } from './zod-def.js'
 
 export interface CallOptions {
   actor: Actor
@@ -53,9 +54,6 @@ function needsConfirmation(action: ActionDefinition, options: CallOptions): bool
 function compareWraps(a: ActionWrap, b: ActionWrap): number {
   return a.order - b.order || a.module.localeCompare(b.module)
 }
-
-type Def = Record<string, unknown> & { type: string }
-const defOf = (schema: unknown): Def => (schema as { _zod: { def: Def } })._zod.def
 
 /**
  * Throws unless every object below the top level rejects unknown keys. Zod's `.strict()` only
