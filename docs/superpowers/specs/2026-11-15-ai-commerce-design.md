@@ -207,6 +207,21 @@ needed.
 
 ## 3e. Models: one main model and specialised ones
 
+> **Status (Iman, 2026-11-15, later the same day): own models and local models are postponed.**
+>
+> - AI Commerce uses hosted LLMs only: Gemini, Claude and OpenAI. The admin chooses the provider
+>   in the settings, or turns AI off.
+> - Creating our own models (X1 to X3 below) is a big decision. It is reconsidered no sooner than
+>   one year after AI Commerce is in real use.
+> - Running open models locally is postponed with it, and so are the Private and Hybrid AI modes.
+>   The modes for now are **Hosted** and **Off**.
+> - Consequences elsewhere: in 3f only option A is built; in 3g the "to a local model" column and
+>   network-enforced Private mode do not apply yet.
+> - What stays: model roles (so a shop can use a cheaper model for moderation and a stronger one
+>   for the chat, from the same or different providers), and the whole privacy design in 3g.
+>
+> The sections below are kept as the record of the idea, not as scheduled work.
+
 Iman, 2026-11-15: one model for the whole shop, and separate models for individual features.
 
 Every AI task names a **role**, and settings map each role to a provider and model:
