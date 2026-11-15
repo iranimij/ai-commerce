@@ -761,6 +761,33 @@ checkout.
 - Public docs site, contribution guide, example modules and theme.
 - Measured comparison table with Magento, Shopify and Shopware.
 - Version 1.0.
+- Project website at **https://aicommerce.iranimij.net** (Iman, 2026-11-15). Built only when the
+  product is finished:
+  - Hugo, built the same way as Iman's other project sites (radicard-website, magento-website):
+    - custom templates and no theme;
+    - Tailwind v4 through Hugo's `css.TailwindCSS`;
+    - a double build so Tailwind sees `hugo_stats.json`.
+  - Content:
+    - a professional landing page;
+    - documentation of every part of the project, taken from `docs/`;
+    - a blog that starts with three posts.
+  - Colours come from the chosen logo.
+  - It lives in its own **private** repository, `iranimij/aicommerce-website`, at
+    `~/Projects/aicommerce-website`.
+  - Every change to `main`, whether by pull request or direct push, deploys automatically. It uses
+    the `deploy.yml` pattern from magento-website:
+    1. Build on every pull request; deploy only from `main`.
+    2. rsync to `releases/<sha>`.
+    3. `activate.sh` swaps a symlink.
+    4. An nginx container serves the site on a free localhost port (8081 to 8084 are taken).
+    5. The host nginx handles TLS with Let's Encrypt.
+    6. A smoke test runs against the live site.
+  - DNS for `aicommerce.iranimij.net` already exists (Iman added it).
+  - Iman must provide:
+    - the deploy secrets `SSH_PRIVATE_KEY`, `SSH_KNOWN_HOSTS`, `SSH_HOST`, `SSH_PORT`,
+      `SSH_USER`;
+    - the deploy key in `authorized_keys`;
+    - the one-time certbot and vhost setup with sudo.
 
 **Done when** every claim in the comparison table has a number or a reproducible test behind it.
 
