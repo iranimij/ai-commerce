@@ -1,0 +1,21 @@
+name: Feature request
+description: Suggest something AI Commerce should do
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: Who needs this, and what can they not do today?
+    validations:
+      required: true
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: How you imagine it working. A rough sketch is fine.
+  - type: textarea
+    id: elsewhere
+    attributes:
+      label: How other platforms handle it
+      description: Magento, Shopify, Shopware or others, if you know.
