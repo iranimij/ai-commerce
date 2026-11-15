@@ -1,6 +1,7 @@
+import type { z } from 'zod'
 import type { ActionContext, ActionDefinition } from './action.js'
-import { can, type Actor } from './actor.js'
-import { redactInput, type AuditSink } from './audit.js'
+import { can, type Actor, type ActorType } from './actor.js'
+import { describeInvalidInput, redactInput, type AuditSink } from './audit.js'
 import { createEventBus, type EventBus } from './events.js'
 import type { ActionWrap } from './module.js'
 import { createPipelines, type Pipelines } from './pipeline.js'
@@ -28,13 +29,16 @@ export interface RegistryOptions {
   events?: EventBus
   /** Receives one entry for every call, whatever its outcome. */
   audit?: AuditSink
-  /** Reported when the audit sink fails. The call's result is not changed. */
+  /** Reported when the audit sink fails; the call's result is not changed. Default: console.error. */
   onAuditError?: (error: unknown) => void
+  /** Reported when a handler throws or returns bad output. Default: console.error. */
+  onError?: (error: unknown, info: { action: string; actorType: ActorType }) => void
   /** Runs write and destructive handlers inside a database transaction. */
   transaction?: <T>(fn: () => Promise<T>) => Promise<T>
 }
 
 const ACTION_NAME = /^[a-z][a-z0-9-]*(\.[a-z][a-z0-9-]*)+$/
+const MAX_AUDIT_INPUT = 16_384
 
 /** People and the AI may only run destructive actions after an explicit confirmation. */
 function needsConfirmation(action: ActionDefinition, options: CallOptions): boolean {
@@ -46,21 +50,109 @@ function compareWraps(a: ActionWrap, b: ActionWrap): number {
   return a.order - b.order || a.module.localeCompare(b.module)
 }
 
+type Def = Record<string, unknown> & { type: string }
+const defOf = (schema: unknown): Def => (schema as { _zod: { def: Def } })._zod.def
+
+/**
+ * Throws unless every object below the top level rejects unknown keys. Zod's `.strict()` only
+ * reaches the top level, and a nested key an AI model invents must not be dropped silently.
+ */
+function assertNestedStrict(action: string, schema: unknown, path: string, top: boolean): void {
+  const def = defOf(schema)
+  const at = (child: unknown, childPath: string) => {
+    assertNestedStrict(action, child, childPath, false)
+  }
+  switch (def.type) {
+    case 'object':
+      if (!top && def.catchall === undefined) {
+        throw new Error(
+          `Action "${action}" input: the object at "${path}" must be a z.strictObject, so unknown keys are rejected`,
+        )
+      }
+      for (const [key, child] of Object.entries(def.shape as Record<string, unknown>)) {
+        at(child, path ? `${path}.${key}` : key)
+      }
+      return
+    case 'array':
+      at(def.element, `${path}[]`)
+      return
+    case 'record':
+      at(def.valueType, `${path}[key]`)
+      return
+    case 'tuple':
+      for (const item of def.items as unknown[]) at(item, `${path}[]`)
+      if (def.rest) at(def.rest, `${path}[]`)
+      return
+    case 'union':
+      for (const option of def.options as unknown[]) at(option, path)
+      return
+    case 'intersection':
+      at(def.left, path)
+      at(def.right, path)
+      return
+    case 'pipe':
+      at(def.in, path)
+      return
+    case 'optional':
+    case 'nullable':
+    case 'default':
+    case 'prefault':
+    case 'nonoptional':
+    case 'readonly':
+    case 'catch':
+      at(def.innerType, path)
+      return
+    default:
+      return
+  }
+}
+
 export function createRegistry(options: RegistryOptions = {}): Registry {
   const pipelines = options.pipelines ?? createPipelines()
   const events = options.events ?? createEventBus()
+  const onError =
+    options.onError ??
+    ((error: unknown, info: { action: string }) => {
+      console.error(`Action ${info.action} failed`, error)
+    })
+  const onAuditError =
+    options.onAuditError ??
+    ((error: unknown) => {
+      console.error('Audit write failed', error)
+    })
   const actions = new Map<string, ActionDefinition>()
+  // Strict copies of each action's input schema, made once at register.
+  const inputs = new Map<string, z.ZodType>()
   const wrapsByAction = new Map<string, ActionWrap[]>()
+
+  /** Events a handler emits are delivered after its call ends, and only if it succeeded. */
+  function deferredEvents(queue: (() => Promise<void>)[]): EventBus {
+    return {
+      subscribe: (subscriber) => {
+        events.subscribe(subscriber)
+      },
+      subscribers: (eventName) => events.subscribers(eventName),
+      emit(event, payload) {
+        const parsed = event.payload.safeParse(payload)
+        if (!parsed.success) {
+          return Promise.reject(new Error(`Invalid payload for event "${event.name}"`))
+        }
+        queue.push(() => events.emit(event, parsed.data))
+        return Promise.resolve()
+      },
+    }
+  }
 
   /** The handler with its wraps around it. Input reaching the handler is validated again. */
   function chain(
     action: ActionDefinition,
+    schema: z.ZodType,
     ctx: ActionContext,
   ): (input: unknown) => Promise<unknown> {
     const inner = async (input: unknown): Promise<unknown> => {
-      const checked = action.input.strict().safeParse(input)
+      const checked = await schema.safeParseAsync(input)
       if (!checked.success) throw new Error('A wrap passed invalid input')
-      return action.handler(checked.data, ctx)
+      return action.handler(checked.data as Record<string, unknown>, ctx)
     }
     return (wrapsByAction.get(action.name) ?? []).reduceRight<(input: unknown) => Promise<unknown>>(
       (next, w) => (input) => w.wrap(input as never, ctx, next),
@@ -72,33 +164,57 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
     name: string,
     input: unknown,
     callOptions: CallOptions,
+    queue: (() => Promise<void>)[],
   ): Promise<Result<unknown>> {
     const action = actions.get(name)
-    if (!action) return fail('not_found', `Unknown action "${name}"`)
+    const schema = inputs.get(name)
+    if (!action || !schema) return fail('not_found', `Unknown action "${name}"`)
 
-    // Strict: unknown keys are rejected, never silently dropped.
-    const parsed = action.input.strict().safeParse(input)
-    if (!parsed.success) return fail('invalid_input', 'Invalid input', parsed.error.issues)
-
-    if (!can(callOptions.actor, action.permission)) {
-      return fail('forbidden', `Not allowed to call "${name}"`)
-    }
-    if (needsConfirmation(action, callOptions)) {
-      return fail('confirmation_required', `"${name}" must be confirmed before it runs`)
-    }
-
-    const ctx: ActionContext = { actor: callOptions.actor, actionName: name, pipelines, events }
-    const run = () => chain(action, ctx)(parsed.data)
     try {
+      const parsed = await schema.safeParseAsync(input)
+      if (!parsed.success) return fail('invalid_input', 'Invalid input', parsed.error.issues)
+
+      if (!can(callOptions.actor, action.permission)) {
+        return fail('forbidden', `Not allowed to call "${name}"`)
+      }
+      if (needsConfirmation(action, callOptions)) {
+        return fail('confirmation_required', `"${name}" must be confirmed before it runs`)
+      }
+
+      const ctx: ActionContext = {
+        actor: callOptions.actor,
+        actionName: name,
+        pipelines,
+        events: deferredEvents(queue),
+      }
+      // Output is checked before the transaction ends, so bad output rolls back too.
+      const run = async (): Promise<unknown> => {
+        const output = await chain(action, schema, ctx)(parsed.data)
+        const checked = await action.output.safeParseAsync(output)
+        if (!checked.success) throw new Error(`Action "${name}" returned invalid output`)
+        return checked.data
+      }
       // Reads need no transaction; writes roll back completely if anything throws.
       const output =
         options.transaction && action.risk !== 'read' ? await options.transaction(run) : await run()
-      const checked = action.output.safeParse(output)
-      if (!checked.success) return fail('handler_error', 'Action failed')
-      return { ok: true, output: checked.data }
-    } catch {
-      // The handler's message may hold internals; callers get a generic one.
+      return { ok: true, output }
+    } catch (error) {
+      queue.length = 0
+      onError(error, { action: name, actorType: callOptions.actor.type })
+      // The error may hold internals; callers get a generic message.
       return fail('handler_error', 'Action failed')
+    }
+  }
+
+  function auditInput(name: string, input: unknown, result: Result<unknown>): unknown {
+    const action = actions.get(name)
+    if (!action) return {}
+    if (!result.ok && result.error.code === 'invalid_input') return describeInvalidInput(input)
+    const redacted = redactInput(input, action.redact ?? [])
+    try {
+      return JSON.stringify(redacted).length > MAX_AUDIT_INPUT ? '[input too large]' : redacted
+    } catch {
+      return '[unstorable input]'
     }
   }
 
@@ -110,7 +226,6 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
     durationMs: number,
   ): Promise<void> {
     if (!options.audit) return
-    const action = actions.get(name)
     const { actor } = callOptions
     try {
       await options.audit.write({
@@ -118,13 +233,13 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
         actorId: actor.id,
         onBehalfOf: actor.onBehalfOf ?? null,
         action: name,
-        input: action ? redactInput(input, action.redact ?? []) : {},
+        input: auditInput(name, input, result),
         outcome: result.ok ? 'ok' : result.error.code,
         durationMs,
       })
     } catch (error) {
       // The action already happened; failing the call now could make a caller repeat it.
-      options.onAuditError?.(error)
+      onAuditError(error)
     }
   }
 
@@ -138,7 +253,9 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
       if (actions.has(action.name)) {
         throw new Error(`Action "${action.name}" is already registered`)
       }
+      assertNestedStrict(action.name, action.input, '', true)
       actions.set(action.name, action)
+      inputs.set(action.name, action.input.strict())
     },
 
     addWrap(wrap) {
@@ -160,8 +277,11 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
 
     async call(name, input, callOptions) {
       const started = performance.now()
-      const result = await execute(name, input, callOptions)
+      const queue: (() => Promise<void>)[] = []
+      const result = await execute(name, input, callOptions, queue)
       await audit(name, input, callOptions, result, Math.round(performance.now() - started))
+      // After commit and audit (spec 4.3): a failing subscriber can no longer undo the action.
+      for (const deliver of queue) await deliver()
       return result
     },
   }

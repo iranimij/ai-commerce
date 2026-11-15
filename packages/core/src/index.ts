@@ -24,4 +24,4 @@ export {
 export { createApp, type ActionInfo, type App, type AppOptions } from './app.js'
 export { defineModule, type ActionWrap, type ModuleDefinition } from './module.js'
 export { type RegistryOptions } from './registry.js'
-export { redactInput, type AuditEntry, type AuditSink } from './audit.js'
+export { describeInvalidInput, redactInput, type AuditEntry, type AuditSink } from './audit.js'

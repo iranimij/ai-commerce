@@ -43,6 +43,19 @@ describe('redactInput', () => {
     expect(input.password).toBe('secret')
   })
 
+  test('redacts at any depth, and always redacts well-known secret names', () => {
+    expect(
+      redactInput(
+        { user: { password: 'p', name: 'a' }, apiKey: 'k', items: [{ access_token: 't' }] },
+        [],
+      ),
+    ).toEqual({
+      user: { password: '[redacted]', name: 'a' },
+      apiKey: '[redacted]',
+      items: [{ access_token: '[redacted]' }],
+    })
+  })
+
   test('input that is not an object is never stored as is', () => {
     expect(redactInput('secret', ['password'])).toBe('[non-object input]')
     expect(redactInput(['secret'], [])).toBe('[non-object input]')
@@ -82,7 +95,7 @@ describe('registry audit hook', () => {
     await registry.call('auth.login', { email: 'a', password: 'p' }, { actor: user })
     await registry.call('auth.login', { password: 'p', extra: 1 }, { actor: user })
     expect(sink.entries[0]?.input).toEqual({ email: 'a', password: '[redacted]' })
-    expect(sink.entries[1]?.input).toEqual({ password: '[redacted]', extra: 1 })
+    expect(sink.entries[1]?.input).toEqual({ '[invalid input]': ['password', 'extra'] })
   })
 
   test('the input of an unknown action is not stored', async () => {
