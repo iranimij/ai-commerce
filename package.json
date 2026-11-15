@@ -14,7 +14,8 @@
     "test": "turbo run test",
     "test:integration": "turbo run test:integration",
     "build": "turbo run build",
-    "changeset": "changeset"
+    "changeset": "changeset",
+    "db:roles": "pnpm --filter @aicommerce/db run roles"
   },
   "devDependencies": {
     "@changesets/cli": "^3.0.3",
