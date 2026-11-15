@@ -2,7 +2,7 @@ import { mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, expect, test } from 'vitest'
-import { runMigrations } from './migrate.js'
+import { MIGRATION_LOCK, runMigrations } from './migrate.js'
 import { createTestDb } from './test-db.js'
 
 let database: Awaited<ReturnType<typeof createTestDb>>
@@ -72,4 +72,27 @@ test('a migration that loses its connection reports the migration, not the clean
   await expect(runMigrations(database, [{ module: 'demo', dir }])).rejects.toThrow(
     'Migration demo/0001_disconnect.sql failed',
   )
+})
+
+test('an applied migration that was edited is reported', async () => {
+  const dir = await migrationDir({ '0001_x.sql': 'create table edited (id int);' })
+  await runMigrations(database, [{ module: 'demo', dir }])
+  await writeFile(join(dir, '0001_x.sql'), 'create table edited (id bigint);')
+  await expect(runMigrations(database, [{ module: 'demo', dir }])).rejects.toThrow(
+    'Migration demo/0001_x.sql was changed after it was applied',
+  )
+})
+
+test('a run waiting for the lock says so', async () => {
+  const dir = await migrationDir({ '0001_wait.sql': 'create table waited (id int);' })
+  const holder = await database.client.reserve()
+  await holder`select pg_advisory_lock(${MIGRATION_LOCK})`
+  const messages: string[] = []
+  const run = runMigrations(database, [{ module: 'demo', dir }], {
+    log: (message) => messages.push(message),
+  })
+  await expect.poll(() => messages).toContain('Waiting for another process to finish migrations')
+  await holder`select pg_advisory_unlock(${MIGRATION_LOCK})`
+  holder.release()
+  await expect(run).resolves.toEqual(['demo/0001_wait.sql'])
 })
