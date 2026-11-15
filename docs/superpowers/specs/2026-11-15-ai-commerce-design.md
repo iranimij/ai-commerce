@@ -434,6 +434,33 @@ ai-commerce/
 | Slots | Named places in storefront and admin where a module puts or replaces UI | Layout XML, blocks |
 | Schema | The module's own tables and migrations | db_schema.xml, patches |
 
+### 4.2a Overriding core behaviour without editing core
+
+Iman, 2026-11-15: developers must be able to change core behaviour as freely as with Magento's
+plugins, events and overrides, and updates must not break because of it.
+
+| Need | Contract | Magento equivalent |
+|---|---|---|
+| Run code before, after or instead of any action | `wraps`: a function around the action's handler, `(input, ctx, next) => output`, with an order | Plugin (before, after, around) |
+| Swap a core service, such as the tax calculator or the URL generator | Services are named interfaces; a module `provides` a replacement | Preference |
+| React to something that happened | Event subscriber | Observer |
+| Change one step of a calculation | Add a pipeline step, or replace a named step | Plugin on a calculation method |
+| Replace part of a page or admin screen | Replace a slot component or a theme template | Layout XML, template override |
+| Add or change fields | Attributes | Extension attributes |
+
+Rules that keep updates safe:
+
+- Nobody edits core files. Every override lives in the developer's own module.
+- Only declared things can be overridden: actions, services, pipeline steps, slots, templates.
+  Arbitrary internal functions cannot, which is what lets core change its internals freely.
+- Wraps run inside the call path, after input validation and the permission check and before
+  output validation, so an override cannot bypass security or return malformed data.
+- `inspect` lists every wrap, replacement and step for a name, with module and order.
+- Each overridable contract has a version. `upgrade` reports every override whose target
+  changed, before anything is applied.
+- Two modules replacing the same service is a startup error naming both, unless one declares
+  that it depends on the other.
+
 ### 4.3 How a call runs
 
 Every call, from any source, goes through one path: identify the actor, validate input, check

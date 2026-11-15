@@ -271,6 +271,15 @@ export interface ModuleDefinition {
   actions?: ActionDefinition<any, any>[]
   subscribers?: Subscriber<any>[]
   steps?: Step<any>[]
+  wraps?: ActionWrap[]
+}
+// A wrap runs around an action's handler: after validation and the permission check,
+// before output validation. Lower order is outermost. Ties: module name.
+export interface ActionWrap {
+  action: string
+  module: string
+  order: number
+  wrap: (input: any, ctx: ActionContext, next: (input: any) => Promise<any>) => Promise<any>
 }
 export function defineModule(def: ModuleDefinition): ModuleDefinition
 
@@ -285,7 +294,9 @@ export interface App {
 export function createApp(options: { modules: ModuleDefinition[]; enabled: string[] }): App
 ```
 
-`createApp` loads only modules named in `enabled`, in dependency order. It throws `Error` with these exact prefixes: `Unknown module: `, `Module "<a>" depends on "<b>", which is not enabled`, `Dependency cycle: a -> b -> a`. A subscriber or step whose `module` field differs from the declaring module's name throws.
+`createApp` loads only modules named in `enabled`, in dependency order. It throws `Error` with these exact prefixes: `Unknown module: `, `Module "<a>" depends on "<b>", which is not enabled`, `Dependency cycle: a -> b -> a`. A subscriber, step or wrap whose `module` field differs from the declaring module's name throws.
+`Registry` gains `addWrap(wrap: ActionWrap): void`, used only by `createApp`. Replaceable services
+(`provides`) are part of M0b.
 
 The sample module (`sample`) is what a third party would write: action `sample.greet` (`input: { name: string }`, public, read, returns `{ greeting: string }`), which runs pipeline `sample.greeting` over `{ text: string }`. A second module in its test (`sample-loud`, depends on `sample`) adds a step that upper-cases the text.
 
@@ -298,7 +309,13 @@ test('a disabled module contributes nothing', ...)                // registry.ge
 test('unknown module name fails with a clear error', ...)
 test('enabling a module without its dependency fails', ...)
 test('a dependency cycle fails and names the cycle', ...)
-test('inspect action returns module, permission and risk', ...)
+test('a wrap can change the input before and the output after', ...)
+test('a wrap can answer without calling next', ...)
+test('wraps run in order, lowest outermost', ...)
+test('a wrap never runs when the actor lacks permission', ...)    // forbidden, wrap not called
+test('output changed by a wrap is still validated', ...)          // malformed output: handler_error
+test('a wrap for an unknown action fails at startup', ...)        // 'Module "x" wraps unknown action "y"'
+test('inspect action returns module, permission, risk and wraps', ...)
 test('inspect pipeline returns steps in run order', ...)
 test('inspect event returns subscribing modules', ...)
 
