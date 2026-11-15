@@ -12,7 +12,8 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
 
 M0 Foundation:
 
-1. Write the M0 implementation plan in `docs/superpowers/plans/`.
+1. Follow `docs/superpowers/plans/2026-11-15-m0a-environment-and-core.md` (M0a). M0b and M0c
+   plans are written when M0a is done.
 2. Docker Compose environment (Node, PostgreSQL, mail catcher, Playwright). Nothing on the host.
 3. Monorepo tooling, CI, GitHub repository setup, branch protection.
 4. `core` contracts, database, auth, server, CLI, design system, installer, sample module.

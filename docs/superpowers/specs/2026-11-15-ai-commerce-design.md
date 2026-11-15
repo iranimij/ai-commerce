@@ -314,6 +314,88 @@ What keeps a public chatbot safe:
   every conversation.
 - It is a module: off by default in `minimal`, a tick in the installer.
 
+## 3g. Privacy: what the AI can see, do and send
+
+Iman, 2026-11-15: many well-known shops do not want an AI working with all of their data.
+Merchants must be able to verify that their data stays with them, to lock things away from the
+AI, and to see everything the AI did and sent.
+
+### Results go to the admin, not to the model
+
+The model plans; the server executes; the result is rendered directly to the admin.
+
+1. The admin asks "what are today's orders?".
+2. The model answers with an action call (`order.list` with a date filter) and a layout.
+3. The server runs the action as the admin and sends the rows to the admin's browser.
+4. The model receives only a **digest**: row count, column names and, where the action declares
+   them, aggregates such as the total. It receives row contents only when the next step needs
+   them and the privacy class allows it.
+
+Every answer has "show the query": the action, its exact input, and what the model received back.
+
+### Privacy class on every field
+
+Each field in a schema carries a class. One function in the core, the AI boundary, is the only
+place data is prepared for a model, and it enforces the classes.
+
+| Class | Examples | To a hosted model | To a local model |
+|---|---|---|---|
+| `public` | Product names, prices, page text | Yes | Yes |
+| `internal` | Order totals, stock, sales figures | Digests by default; the owner can allow rows | Yes |
+| `personal` | Names, emails, addresses, phone numbers, IP addresses | No. Replaced by a stable stand-in ("Customer 1042") and restored when shown to the admin. The owner can allow named fields | Yes |
+| `secret` | Passwords, API keys, tokens, payment details | Never | Never |
+
+- A field with no class is treated as `personal`, so a module author who forgets is safe.
+- `secret` has no setting. It cannot be allowed.
+- Free text written by customers (reviews, order notes) is `personal` and also marked as
+  untrusted input (5.1).
+
+### AI locks
+
+The shop owner can lock any action, module or field from the AI.
+
+- A locked action is not offered as a tool, so the model does not know it exists. A locked field
+  is removed at the AI boundary.
+- Locks apply to the admin chat, duties, the shopper assistant and the MCP endpoint alike.
+- Locked by default: payment and tax settings, admin users, roles and permissions, API tokens,
+  AI settings and the locks themselves, module install and removal, data export of customers.
+- Only an owner can change locks, from the dashboard, with 2FA. The AI can never change a lock,
+  its own trust level, or its own permissions.
+
+### The "what left my server" log
+
+Separate from the activity log (what the AI did), the outbound log records what was sent.
+
+| Recorded per request | |
+|---|---|
+| When, and which admin, duty or visitor it was for | |
+| Role, provider, model, and whether it was local or hosted | |
+| The exact content sent, viewable in full | |
+| Which privacy classes it contained and how many stand-ins were used | |
+| Size and cost | |
+
+The owner can filter it, export it, and set how long it is kept. In Private mode the page states
+that no request left the server, and the app container can be run with outbound network access
+to model providers blocked, so the claim is enforced by the network and not only by our code.
+
+### Retention at the provider
+
+- Hosted requests are sent with the provider's no-retention and no-training options wherever the
+  provider offers them. Settings show the status per provider.
+- We cannot verify what a provider does on its side, and the product says so. Merchants who need
+  certainty use Private mode.
+- Our own stored copies (conversations, outbound log) have an owner-set retention period and are
+  included in customer data export and deletion.
+
+### Where this is built
+
+| Piece | Milestone |
+|---|---|
+| Privacy class on fields, the AI boundary, default-personal rule | M0b |
+| Digests, stand-ins, "show the query", outbound log, locks | M1 |
+| Network-enforced Private mode | M1 |
+| Applied to duties and the shopper assistant | M2 |
+
 ## 4. Architecture
 
 ### 4.1 Repository
