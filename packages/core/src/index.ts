@@ -27,3 +27,11 @@ export { type RegistryOptions } from './registry.js'
 export { ActionError, type HandlerErrorCode } from './errors.js'
 export { defineService, provide, type ServiceDefinition, type ServiceProvision } from './service.js'
 export { describeInvalidInput, redactInput, type AuditEntry, type AuditSink } from './audit.js'
+export {
+  classify,
+  privacyOf,
+  toModel,
+  type BoundaryResult,
+  type ModelPolicy,
+  type PrivacyClass,
+} from './privacy.js'
