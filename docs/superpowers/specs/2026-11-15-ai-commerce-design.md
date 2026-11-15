@@ -240,8 +240,18 @@ on the shop's own server.
   never leaves the server.
 - The `assistant` role still needs a strong model. Small local models are not reliable at
   choosing and calling actions, and a wrong action is worse than a slow one.
-- The installer offers three choices: hosted provider only, local models for the supporting
-  roles, or no AI.
+- **AI mode** is a named choice in the installer and the settings (Iman, 2026-11-15: merchants
+  will value their data never leaving their server):
+
+  | Mode | Where data goes | Trade-off |
+  |---|---|---|
+  | Private | Nowhere. Every role runs on the shop's server | The chats are less capable unless the server has a strong GPU. X3 is meant to close that gap |
+  | Hybrid (default) | Only the `assistant` and `shopper` chats use a hosted provider; everything else stays local | Best balance today |
+  | Hosted | A provider handles every role | Easiest, no GPU needed |
+  | Off | No AI | Dashboard only |
+
+  The mode can be changed at any time. Every AI feature shows which model runs it and whether it
+  is local or hosted.
 - Arrives in M1 with the first roles that can use it (embedding, vision).
 
 ### Our own models, published as AI Commerce on Hugging Face
