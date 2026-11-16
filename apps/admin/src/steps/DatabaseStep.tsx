@@ -31,7 +31,10 @@ export function DatabaseStep({ t, database, onContinue, onRetry }: DatabaseStepP
       title={t('database.title')}
       footer={<Button onClick={onContinue}>{t('common.continue')}</Button>}
     >
-      <Alert tone="success">{t('database.ok', { version: database.version ?? '' })}</Alert>
+      {/* Isolated, so a Latin version string keeps its own order inside right-to-left text. */}
+      <Alert tone="success">
+        {t('database.ok', { version: `\u2068${database.version ?? ''}\u2069` })}
+      </Alert>
     </Card>
   )
 }

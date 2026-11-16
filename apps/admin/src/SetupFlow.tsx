@@ -24,11 +24,16 @@ import { TwoFactorStep } from './steps/TwoFactorStep'
 
 interface Status {
   finished: boolean
-  next: 'owner' | 'two-factor' | 'shop' | 'modules' | 'done'
+  next: 'owner' | 'two-factor' | 'shop' | 'modules' | 'finish' | 'done'
   database: { ok: boolean; version: string | null }
 }
 type View =
-  'database' | Exclude<Status['next'], 'done'> | 'extras' | 'done' | 'finished' | 'no-token'
+  | 'database'
+  | Exclude<Status['next'], 'done' | 'finish'>
+  | 'extras'
+  | 'done'
+  | 'finished'
+  | 'no-token'
 
 const TOKEN_KEY = 'aicommerce-setup-token'
 const STEP_OF: Record<View, string> = {
@@ -96,7 +101,16 @@ export function SetupFlow({ locale, theme: initialTheme }: { locale: string; the
         return
       }
     }
-    setView(s.next === 'owner' ? 'database' : s.next === 'done' ? 'finished' : s.next)
+    // Modules chosen: resume at the last step, so the choice is kept.
+    setView(
+      s.next === 'owner'
+        ? 'database'
+        : s.next === 'done'
+          ? 'finished'
+          : s.next === 'finish'
+            ? 'extras'
+            : s.next,
+    )
   }, [token])
 
   useEffect(() => {
