@@ -1,6 +1,15 @@
 'use client'
 import { SUPPORTED_LOCALES } from '@aicommerce/i18n'
-import { Card, Select, Spinner, Stepper, ThemeToggle, UiProvider, type Theme } from '@aicommerce/ui'
+import {
+  Card,
+  Logo,
+  Select,
+  Spinner,
+  Stepper,
+  ThemeToggle,
+  UiProvider,
+  type Theme,
+} from '@aicommerce/ui'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { action } from './api'
@@ -200,7 +209,10 @@ export function SetupFlow({ locale, theme: initialTheme }: { locale: string; the
     <UiProvider dir={dir} theme={theme}>
       <div className="mx-auto flex min-h-dvh max-w-3xl flex-col gap-6 px-4 py-8">
         <header className="flex flex-wrap items-end justify-between gap-4">
-          <h1 className="text-2xl font-semibold">{t('setup.title')}</h1>
+          <div className="flex flex-col gap-3">
+            <Logo label={t('common.brand')} wordmark={t('common.brand')} size={32} />
+            <h1 className="text-2xl font-semibold">{t('setup.title')}</h1>
+          </div>
           <div className="flex flex-wrap items-end gap-3">
             <Select
               label={t('common.language')}
