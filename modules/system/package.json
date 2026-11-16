@@ -1,0 +1,31 @@
+{
+  "name": "@aicommerce/module-system",
+  "version": "0.0.0",
+  "description": "Core admin actions: attributes, settings and jobs",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@aicommerce/core": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@aicommerce/db": "workspace:*",
+    "@aicommerce/module-sample": "workspace:*"
+  }
+}

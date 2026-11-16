@@ -1,4 +1,5 @@
 import {
+  attributeStore,
   createApp,
   guestActor,
   provide,
@@ -10,6 +11,7 @@ import {
 import {
   coreMigrations,
   createDbAuditSink,
+  createPgAttributeStore,
   createPgResourceStore,
   runMigrations,
 } from '@aicommerce/db'
@@ -27,7 +29,10 @@ beforeAll(async () => {
   app = createApp({
     modules: [sample],
     enabled: ['sample'],
-    services: [provide(resourceStore, 'app', createPgResourceStore(database))],
+    services: [
+      provide(resourceStore, 'app', createPgResourceStore(database)),
+      provide(attributeStore, 'app', createPgAttributeStore(database)),
+    ],
     audit: createDbAuditSink(database),
     transaction: database.transaction,
     onError: () => undefined,
