@@ -37,13 +37,48 @@ services:
       # Development values only. Production keys come from the environment, never from git.
       AICOMMERCE_SECRET_KEY: ZGV2ZWxvcG1lbnQtb25seS1zZWNyZXQta2V5LTMyYiE=
       AICOMMERCE_AUTH_SECRET: development-only-auth-secret-not-for-production
-      AICOMMERCE_PUBLIC_URL: http://localhost:3000
+      # Browsers reach the server through the admin's /api proxy, so this is the admin origin.
+      AICOMMERCE_PUBLIC_URL: http://localhost:3001
       CI: 'true'
       TURBO_TELEMETRY_DISABLED: '1'
+      NEXT_TELEMETRY_DISABLED: '1'
     ports:
       - '127.0.0.1:3000:3000'
     depends_on:
       db:
+        condition: service_healthy
+    # Healthy once built and listening; the admin waits for it, as the build includes the admin.
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:3000/healthz').then((r) => process.exit(r.ok ? 0 : 1), () => process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 600s
+
+  # The admin, in M0c only the setup page: docker compose up server admin, then http://localhost:3001.
+  admin:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    working_dir: /app/apps/admin
+    command: sh -c "exec node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port 3001"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - pnpm_store:/pnpm-store
+    environment:
+      AICOMMERCE_SERVER_URL: http://server:3000
+      NEXT_TELEMETRY_DISABLED: '1'
+    ports:
+      - '127.0.0.1:3001:3001'
+    depends_on:
+      server:
         condition: service_healthy
 
   db:
