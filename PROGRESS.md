@@ -22,17 +22,29 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
     - the append-only `audit_log`.
   - `modules/sample` proves that a third-party module can change behaviour.
   - Tests: 71 unit and 14 integration.
+- **M0b is built** (PRs #23 to #34); the whole-branch review is next.
+  - `@aicommerce/core`: services, handler errors, module namespaces, privacy classes and
+    `toModel`, resources (seven actions each), attributes, settings, jobs.
+  - `@aicommerce/db`: the runtime role `aicommerce_app` (append-only audit and revisions),
+    migration checksums, a PostgreSQL rate limiter, revisions, encrypted settings, the job queue
+    and worker.
+  - `@aicommerce/auth`: admin sign-in through Better Auth, mandatory TOTP, roles.
+  - `modules/system` (attributes, settings, jobs) and `modules/access` (roles, admins).
+  - `apps/server`: the HTTP API, OpenAPI, CSRF and rate limits, `main.ts`, and
+    `docker compose up server`.
+  - Docs: `docs/guides/`, `docs/security/threat-model-m0b.md`, `docs/decisions/log.md`.
+  - Tests: 134 unit and 100 integration, including the M0b acceptance test over HTTP.
 - Logo: three proposals are waiting for Iman's choice at
   https://claude.ai/artifact/DxTRuJwEqrEExvfWaD6aZF. I recommend A, Spark bag.
 
 ## Next
 
-1. Write the M0b plan: resources, attributes, settings, privacy classes, revisions, auth,
-   server. Then build it.
-2. Write and build M0c: CLI, design system, installer, QA gate.
+1. Final review of M0b, one fix pass, then Notion.
+2. Write and build M0c: i18n, CLI, design system, installer, contract test, QA gate. The QA gate
+   checks the TOTP issuer with a real authenticator app.
 3. Move on to M1 and beyond.
 
-## Rules for code written on top of M0a
+## Rules for code written on top of M0b
 
 - A nested object in an action's input must be `z.strictObject`; `register` rejects anything
   else.
@@ -41,21 +53,13 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
 - Read actions do not run in a transaction and must not write.
 - Run migrations over a direct PostgreSQL connection, never through PgBouncer in transaction
   mode.
-
-## Deferred minors from the M0a review (pick up where they fit)
-
-- Use a runtime database role with INSERT and SELECT only on `audit_log`; the table owner can
-  disable its triggers. Do this with auth and deploy in M0b.
-- `guestActor` and `systemActor` permission Sets can be changed at run time; freeze `ctx`; allow
-  a wrap to call `next` only once.
-- A wrap should only target actions of modules it depends on. An action name should be tied to
-  the module that declares it.
-- Migrations: add a checksum, and log while waiting for the migration lock.
-- CI:
-  - Do not cancel runs on `main`.
-  - Pin actions by SHA, `release.yml` first.
-  - Move `pnpm audit` out of the required check.
-  - Pin the Mailpit image and bind it to 127.0.0.1.
+- Every public action (`permission: null`) must be listed in
+  `apps/server/security/public-actions.json`.
+- Store timestamps as `timestamptz(3)` and write `date_trunc('milliseconds', now())`; a rounded
+  `now()` can land in the future.
+- Jobs write through `ctx.call`, so their work is audited. Make job handlers idempotent.
+- Never chain a merge after a local test run in one command: gate the merge on the result.
+- The guides in `docs/guides/` are the contract reference: update them with the contract.
 
 ## Standing rules
 

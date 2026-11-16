@@ -43,6 +43,12 @@ Shopify and Shopware, for shops of any size.
 | M11 | Adobe Commerce parity (B2B and more)                  |
 | M12 | Benchmarks, audits, version 1.0                       |
 
+## Documentation
+
+- [Guides](docs/guides/README.md): one page per contract, with examples from `modules/sample`.
+- [Threat model (M0b)](docs/security/threat-model-m0b.md).
+- [Decisions log](docs/decisions/log.md).
+
 ## Development
 
 You need Docker and git. Nothing else is installed on your machine.
