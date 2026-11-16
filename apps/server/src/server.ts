@@ -39,7 +39,8 @@ export interface LogLine {
 }
 
 export interface ServerOptions {
-  app: App
+  /** The app, or a getter for one that may be replaced when modules switch. */
+  app: App | (() => App)
   auth: AdminAuth
   /** Only used by /readyz. */
   database: Pick<Database, 'client'>
@@ -91,7 +92,8 @@ const failure = (c: Context, status: ContentfulStatusCode, code: string, message
   c.json({ ok: false, error: { code, message } }, status)
 
 export function createServer(options: ServerOptions): Hono<Env> {
-  const { app, auth, rateLimiter } = options
+  const { auth, rateLimiter } = options
+  const appOf = typeof options.app === 'function' ? options.app : () => options.app as App
   const trustedProxies = options.trustedProxies ?? 0
   const allowedOrigins = new Set([
     new URL(options.publicUrl).origin,
@@ -102,7 +104,7 @@ export function createServer(options: ServerOptions): Hono<Env> {
     ((line: LogLine) => {
       console.info(JSON.stringify(line))
     })
-  let openApi: Record<string, unknown> | undefined
+  const openApis = new WeakMap<App, Record<string, unknown>>()
 
   // The socket address, or the entry the nearest trusted proxy appended to X-Forwarded-For.
   const clientIp = (c: Context): string => {
@@ -212,7 +214,15 @@ export function createServer(options: ServerOptions): Hono<Env> {
     })
   })
 
-  server.get('/api/openapi.json', (c) => c.json((openApi ??= createOpenApi(app))))
+  server.get('/api/openapi.json', (c) => {
+    const app = appOf()
+    let doc = openApis.get(app)
+    if (!doc) {
+      doc = createOpenApi(app)
+      openApis.set(app, doc)
+    }
+    return c.json(doc)
+  })
 
   server.post(
     '/api/actions/:name',
@@ -261,7 +271,7 @@ export function createServer(options: ServerOptions): Hono<Env> {
           400,
         )
       }
-      const result = await app.registry.call(name, parsed.data.input, {
+      const result = await appOf().registry.call(name, parsed.data.input, {
         actor,
         confirmed: parsed.data.confirmed === true,
       })

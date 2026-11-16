@@ -120,7 +120,10 @@ test('module.disable asks for confirmation; an unknown module is not_found', asy
 
 test('set notifies aicommerce_modules only on commit', async () => {
   const heard: string[] = []
-  const listener = await database.client.listen(MODULES_CHANNEL, (payload) => heard.push(payload))
+  // The channel spans the database; other test files switch modules in their own schemas.
+  const listener = await database.client.listen(MODULES_CHANNEL, (payload) => {
+    if (payload === database.schema) heard.push(payload)
+  })
   try {
     await call('broken.set-then-fail', {})
     await new Promise((resolve) => setTimeout(resolve, 200))

@@ -3,7 +3,10 @@ import { sql } from 'drizzle-orm'
 import type { Database } from './client.js'
 import { createRevisions } from './revisions.js'
 
-/** Every app process listens here and reloads its modules. */
+/**
+ * Every app process listens here and reloads its modules. The payload is the schema, because a
+ * channel spans the whole database and other installs (or test files) may share it.
+ */
 export const MODULES_CHANNEL = 'aicommerce_modules'
 
 const NOW = sql.raw(`date_trunc('milliseconds', now())`)
@@ -44,7 +47,7 @@ export function createPgModuleState(database: Database): ModuleStateStore {
         after: { enabled: [...enabled] },
       })
       // Delivered by PostgreSQL only when the transaction commits.
-      await run(sql`select pg_notify(${MODULES_CHANNEL}, '')`)
+      await run(sql`select pg_notify(${MODULES_CHANNEL}, current_schema())`)
     },
   }
 }

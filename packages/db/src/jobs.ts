@@ -85,7 +85,8 @@ export function createPgJobQueue(database: Database): JobQueue {
 
 export interface WorkerOptions {
   database: Database
-  app: App
+  /** The app, or a getter for one that may be replaced (module switching). Read each round. */
+  app: App | (() => App)
   /** Jobs claimed per round. Default 4. */
   concurrency?: number
   /** Wait between rounds that found nothing. Default 1000. */
@@ -106,7 +107,8 @@ const errorMessage = (error: unknown) =>
   (error instanceof Error ? error.message : String(error)).slice(0, 2000)
 
 export function createWorker(options: WorkerOptions): Worker {
-  const { database, app } = options
+  const { database } = options
+  const appOf = typeof options.app === 'function' ? options.app : () => options.app as App
   const concurrency = options.concurrency ?? 4
   const pollIntervalMs = options.pollIntervalMs ?? 1000
   const log =
@@ -118,7 +120,7 @@ export function createWorker(options: WorkerOptions): Worker {
   // Outside any call's transaction: a job's writes go through ctx.call.
   const run = async (query: SQL): Promise<Row[]> => await database.db.execute(query)
 
-  const execute = async (row: Row): Promise<void> => {
+  const execute = async (app: App, row: Row): Promise<void> => {
     const id = String(row.id)
     const def = app.jobs().find((j) => j.name === row.name)
     const ctx: JobContext = {
@@ -166,6 +168,7 @@ export function createWorker(options: WorkerOptions): Worker {
         locked_by = null, updated_at = now()
       where status = 'running'
         and locked_at < now() - (timeout_seconds + 30) * interval '1 second'`)
+    const app = appOf()
     const names = app.jobs().map((j) => j.name)
     if (names.length === 0) return 0
     const claimed = await run(sql`update job set status = 'running', attempts = attempts + 1,
@@ -181,7 +184,7 @@ export function createWorker(options: WorkerOptions): Worker {
         limit ${concurrency}
         for update skip locked)
       returning id, name, payload, attempts, timeout_seconds`)
-    await Promise.all(claimed.map(execute))
+    await Promise.all(claimed.map((row) => execute(app, row)))
     return claimed.length
   }
 
