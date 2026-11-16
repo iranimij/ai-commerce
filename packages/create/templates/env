@@ -8,6 +8,10 @@
 AICOMMERCE_PORT={{PORT}}
 AICOMMERCE_PUBLIC_URL=http://localhost:{{PORT}}
 
+# Behind a TLS proxy that replaces the visitor's X-Forwarded-For header (Caddy does by default),
+# set this to 1 so rate limits count each visitor. Leave it out otherwise: visitors could fake it.
+# AICOMMERCE_TRUSTED_PROXIES=1
+
 AICOMMERCE_SECRET_KEY={{SECRET_KEY}}
 AICOMMERCE_AUTH_SECRET={{AUTH_SECRET}}
 

@@ -19,4 +19,5 @@ One page per contract. Each example is real code in `modules/sample`, so CI runs
 | [Design system](ui.md)                    | Tokens, themes, right-to-left and the React components  |
 | [Translations](i18n.md)                   | Message catalogs, ICU, locales and right-to-left        |
 | [Switching modules](module-switching.md)  | Installed versus enabled, presets, no-restart reloads   |
+| [Installing a shop](installing.md)        | `npm create`, the image, the setup page and its token   |
 | [The ai-commerce command](cli.md)         | dev, migrate, inspect, modules, add, backup and restore |
