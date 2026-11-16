@@ -1,4 +1,4 @@
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, realpathSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -10,10 +10,15 @@ import { run, type Io } from './main.js'
 const fixture = (name: string) =>
   `file:${fileURLToPath(new URL(`../test/fixtures/${name}`, import.meta.url))}`
 
-// A shop outside the monorepo, so pnpm treats it as a project of its own.
+// A shop outside the monorepo, so pnpm treats it as a project of its own. It links the monorepo's
+// zod, the fixtures' peer dependency, so installs stay offline.
 const shop = mkdtempSync(join(tmpdir(), 'aicommerce-shop-'))
+const zod = realpathSync(fileURLToPath(new URL('../node_modules/zod', import.meta.url)))
 beforeAll(() => {
-  writeFileSync(join(shop, 'package.json'), '{ "name": "shop", "private": true }\n')
+  writeFileSync(
+    join(shop, 'package.json'),
+    `${JSON.stringify({ name: 'shop', private: true, dependencies: { zod: `link:${zod}` } })}\n`,
+  )
 })
 
 function capture(answer: boolean) {
@@ -93,4 +98,26 @@ test('a package without a module is refused', async () => {
   expect(err.join('\n')).toContain('not an AI Commerce module')
   expect(snapshot()).toEqual(before)
   expect(existsSync(join(shop, 'node_modules/not-a-module'))).toBe(false)
+}, 60_000)
+
+test('a third-party module cannot be required', async () => {
+  const before = snapshot()
+  const { io, err } = capture(true)
+  expect(await run(['add', fixture('module-required'), '--yes'], io)).toBe(1)
+  expect(err.join('\n')).toContain('only first-party modules can be required')
+  expect(snapshot()).toEqual(before)
+  expect(existsSync(join(shop, 'node_modules/aicommerce-module-required'))).toBe(false)
+}, 60_000)
+
+test('a module the app cannot be built with is refused before asking', async () => {
+  const before = snapshot()
+  const { io, err, asked } = capture(true)
+  expect(await run(['add', fixture('module-broken')], io)).toBe(1)
+  const text = err.join('\n')
+  expect(text).toContain('cannot be switched on')
+  expect(text).toContain('_zod')
+  expect(text).toContain('Nothing was changed')
+  expect(asked).toEqual([])
+  expect(snapshot()).toEqual(before)
+  expect(existsSync(join(shop, 'node_modules/aicommerce-module-broken'))).toBe(false)
 }, 60_000)

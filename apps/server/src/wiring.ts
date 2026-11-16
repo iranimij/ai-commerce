@@ -82,6 +82,12 @@ export async function loadModulePackage(dir: string, pkg: string): Promise<Modul
   if (!isModuleDefinition(loaded.default)) {
     throw new Error(`${pkg} is not an AI Commerce module: its default export is not a module`)
   }
+  // A required module is forced on and cannot be disabled: only first-party modules get that.
+  if (loaded.default.required) {
+    throw new Error(
+      `${pkg} declares "required": only first-party modules can be required, so it is refused`,
+    )
+  }
   // The package root: the nearest package.json above the entry (exports may hide the file).
   let root = dirname(entry)
   while (!existsSync(join(root, 'package.json')) && dirname(root) !== root) root = dirname(root)

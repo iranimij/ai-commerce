@@ -1,4 +1,5 @@
-import { spawn } from 'node:child_process'
+import { spawn, type ChildProcessByStdio } from 'node:child_process'
+import type { Readable, Writable } from 'node:stream'
 import { parseArgs, type ParseArgsConfig } from 'node:util'
 import type { Install } from '@aicommerce/server'
 
@@ -45,16 +46,24 @@ export function exec(command: string, args: string[], cwd: string): Promise<stri
 
 /**
  * Runs a PostgreSQL tool. The password goes in PGPASSWORD, so it never shows in the process list.
+ * `feed` writes the tool's standard input; without it the tool reads none.
  */
-export function pgTool(tool: string, args: string[], url: string): Promise<string> {
+export function pgTool(
+  tool: string,
+  args: string[],
+  url: string,
+  feed?: (child: ChildProcessByStdio<Writable, Readable, Readable>) => void,
+): Promise<string> {
   const target = new URL(url)
   const password = decodeURIComponent(target.password)
   target.password = ''
   return new Promise((resolve, reject) => {
     const child = spawn(tool, [...args, `--dbname=${target.href}`], {
       env: { ...process.env, PGPASSWORD: password },
-      stdio: ['ignore', 'pipe', 'pipe'],
+      stdio: ['pipe', 'pipe', 'pipe'],
     })
+    if (feed) feed(child)
+    else child.stdin.end()
     let output = ''
     child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()))
     child.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()))
