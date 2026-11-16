@@ -1,18 +1,62 @@
-// A third-party module as a plain object: no dependencies, so tests install it offline.
+// A third-party module as plain objects. zod is a peer dependency, as for a real module, so the
+// test shop links the monorepo's copy and installs stay offline.
+import { z } from 'zod'
+
+const none = z.object({})
+const handler = () => Promise.resolve({})
+
 export default {
   name: 'gifts',
   label: 'Gift wrapping',
   description: 'Adds gift wrapping to orders',
   depends: ['sample'],
   actions: [
-    { name: 'gifts.wrap', description: 'Wrap an order', permission: 'gifts.manage', risk: 'write' },
-    { name: 'gifts.peek', description: 'Show the wrapping papers', permission: null, risk: 'read' },
+    {
+      name: 'gifts.wrap',
+      description: 'Wrap an order',
+      input: none,
+      output: none,
+      permission: 'gifts.manage',
+      risk: 'write',
+      handler,
+    },
+    {
+      name: 'gifts.peek',
+      description: 'Show the wrapping papers',
+      input: none,
+      output: none,
+      permission: null,
+      risk: 'read',
+      handler,
+    },
   ],
   settings: [
-    { key: 'gifts.api-key', label: 'Paper supplier key', privacy: 'secret', scope: 'global' },
-    { key: 'gifts.paper', label: 'Default paper', privacy: 'public', scope: 'global' },
+    {
+      key: 'gifts.api-key',
+      module: 'gifts',
+      label: 'Paper supplier key',
+      schema: z.string(),
+      privacy: 'secret',
+      scope: 'global',
+    },
+    {
+      key: 'gifts.paper',
+      module: 'gifts',
+      label: 'Default paper',
+      schema: z.string(),
+      privacy: 'public',
+      scope: 'global',
+    },
   ],
-  jobs: [{ name: 'gifts.restock', description: 'Order more paper' }],
+  jobs: [
+    {
+      name: 'gifts.restock',
+      module: 'gifts',
+      description: 'Order more paper',
+      payload: z.strictObject({}),
+      handler,
+    },
+  ],
   wraps: [
     {
       action: 'sample.greet',

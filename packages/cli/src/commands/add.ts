@@ -1,6 +1,11 @@
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
-import type { AicommerceConfig, ModuleDefinition } from '@aicommerce/core'
+import {
+  createApp,
+  resolveModules,
+  type AicommerceConfig,
+  type ModuleDefinition,
+} from '@aicommerce/core'
 import { CONFIG_FILE, loadModulePackage, type ModulePackage } from '@aicommerce/server'
 import { exec, parse, show, table, UsageError, type Io } from '../io.js'
 
@@ -47,6 +52,20 @@ export async function add(argv: string[], io: Io): Promise<number> {
     const loaded = await loadModulePackage(io.cwd, installed)
     if (io.install.modules.some((m) => m.name === loaded.module.name)) {
       throw new Error(`A module named "${loaded.module.name}" is already installed`)
+    }
+    // A trial build, as `inspect` does: a module the app cannot be built with would stop the
+    // server and every CLI command, including `module disable`, once enabled.
+    const all = [...io.install.modules, loaded.module]
+    try {
+      createApp({
+        modules: all,
+        enabled: resolveModules(all, [loaded.module.name]).enabled,
+        onError: () => undefined,
+      })
+    } catch (error) {
+      throw new Error(`${installed} cannot be switched on: ${(error as Error).message}`, {
+        cause: error,
+      })
     }
     for (const line of describe(installed, loaded)) io.out(line)
     const yes =

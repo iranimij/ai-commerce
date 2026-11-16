@@ -5,5 +5,8 @@
   "exports": "./index.js",
   "scripts": {
     "postinstall": "node -e \"require('fs').writeFileSync(process.env.INIT_CWD + '/postinstall-ran', 'x')\""
+  },
+  "peerDependencies": {
+    "zod": "^4.0.0"
   }
 }

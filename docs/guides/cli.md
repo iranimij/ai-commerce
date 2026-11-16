@@ -51,7 +51,11 @@ ai-commerce add aicommerce-module-gifts
    - its jobs and the actions it wraps;
    - the services it replaces;
    - its migrations (the package's `migrations/` folder).
-4. On yes, it is listed in `aicommerce.config.json` and stays switched off until you run
+4. It is refused if it declares `required`: only first-party modules can be always on.
+5. Before you are asked, the app is built once with every installed module and this one switched
+   on, as `inspect` does. A module the app cannot be built with is refused with the error, so it
+   can never stop the server or the CLI (`module disable` included).
+6. On yes, it is listed in `aicommerce.config.json` and stays switched off until you run
    `module enable`. On no, or on any error, `package.json`, the lockfile and the config are put
    back byte for byte.
 
@@ -64,5 +68,11 @@ you would run.
   in the backup cannot be read. A backup holds personal data; store it like the database.
 - `restore` refuses a file `pg_restore` cannot read, and asks before replacing anything unless
   you pass `--yes`.
-- It restores with `--clean --if-exists --single-transaction`, so a failed restore changes nothing.
-- It then grants the runtime role its rights again. Restart the server afterwards.
+- It drops and recreates the schemas first (`public` and every schema in the backup, or the one
+  `--schema` names), then loads the backup with `psql`, all in one transaction. Tables made after
+  the backup, by a newer migration or a module enabled since, are gone with it, so the next start
+  migrates cleanly; a failed restore changes nothing. The migration role must own those schemas.
+- It then grants the runtime role its rights again. Other roles' rights on the schemas are not
+  kept. Restart the server afterwards.
+- When `AICOMMERCE_SECRET_KEY` is set, it tries the key on one secret setting of the restored data
+  and warns if the key does not match the backup (the restore still succeeds).
