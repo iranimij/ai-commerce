@@ -2,6 +2,8 @@ import { fileURLToPath } from 'node:url'
 import {
   classify,
   defineAction,
+  defineEvent,
+  defineJob,
   defineModule,
   definePipeline,
   defineResource,
@@ -46,6 +48,19 @@ export const greetingWord = defineSetting({
   scope: 'global',
 })
 
+/** A secret setting: stored encrypted, never shown again once set. */
+export const webhookSecret = defineSetting({
+  key: 'sample.webhook-secret',
+  module: 'sample',
+  label: 'Webhook secret',
+  schema: z.string().min(16).max(200),
+  privacy: 'secret',
+  scope: 'global',
+})
+
+/** Emitted after a greeting; subscribers run once the call has succeeded. */
+export const greeted = defineEvent('sample.greeted', z.object({ name: z.string() }))
+
 export const greet = defineAction({
   name: 'sample.greet',
   description: 'Greet someone by name',
@@ -56,7 +71,20 @@ export const greet = defineAction({
   handler: async (input, ctx) => {
     const word = (await ctx.service(settings).get(greetingWord)) ?? 'Hello'
     const { value } = await ctx.pipelines.run(greeting, { text: `${word}, ${input.name}` })
+    await ctx.events.emit(greeted, { name: input.name })
     return { greeting: value.text }
+  },
+})
+
+/** A background job; it writes through an action, so its work is audited. */
+export const greetLater = defineJob({
+  name: 'sample.greet-later',
+  module: 'sample',
+  description: 'Greet someone in the background',
+  payload: z.strictObject({ name: z.string().min(1).max(100) }),
+  handler: async (payload, ctx) => {
+    const result = await ctx.call('sample.greet', payload)
+    if (!result.ok) throw new Error(result.error.message)
   },
 })
 
@@ -64,5 +92,6 @@ export const sample = defineModule({
   name: 'sample',
   actions: [greet],
   resources: [note],
-  settings: [greetingWord],
+  settings: [greetingWord, webhookSecret],
+  jobs: [greetLater],
 })

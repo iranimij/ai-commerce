@@ -1,112 +1,25 @@
-import { createAdminAuth, type AdminAuth } from '@aicommerce/auth'
-import type { App } from '@aicommerce/core'
-import { createDb, createRateLimiter, runMigrations } from '@aicommerce/db'
-import { createTestDb, type TestDb } from '@aicommerce/db/testing'
-import * as OTPAuth from 'otpauth'
+import { createRateLimiter, createDb } from '@aicommerce/db'
 import { afterAll, beforeAll, expect, test } from 'vitest'
 import { createServer } from './server.js'
-import { createAicommerce, migrationSources } from './wiring.js'
+import { BASE, createTestServer } from './testkit.js'
 
-const BASE = 'http://localhost:3000'
-const PASSWORD = 'correct horse battery'
-let database: TestDb
-let auth: AdminAuth
-let app: App
-let server: ReturnType<typeof createServer>
-const logs: string[] = []
-let n = 1
+let t: Awaited<ReturnType<typeof createTestServer>>
+let database: typeof t.database
+let server: typeof t.server
+let action: typeof t.action
+let post: typeof t.post
+let signedIn: typeof t.signedIn
+let auditCount: typeof t.auditCount
+let nextIp: typeof t.nextIp
+let logs: string[]
 
 beforeAll(async () => {
-  database = await createTestDb()
-  const modules = ['system', 'access', 'sample']
-  await runMigrations(database, migrationSources(modules), { log: () => undefined })
-  auth = createAdminAuth({
-    database,
-    baseURL: BASE,
-    secret: 'a-test-secret-that-is-long-enough-1234567890',
-    trustedOrigins: [BASE],
-    production: false,
-    ipHeader: 'x-aicommerce-client-ip',
-  })
-  app = createAicommerce({ database, secretKey: Buffer.alloc(32, 7), auth, modules })
-  server = createServer({
-    app,
-    auth,
-    database,
-    rateLimiter: createRateLimiter(database),
-    publicUrl: BASE,
-    production: false,
-    trustedProxies: 1,
-    log: (line) => logs.push(JSON.stringify(line)),
-  })
+  t = await createTestServer()
+  ;({ database, server, action, post, signedIn, auditCount, nextIp, logs } = t)
 })
 afterAll(async () => {
-  await database.drop()
+  await t.database.drop()
 })
-
-const nextIp = () => `10.1.${String(Math.floor(n / 250))}.${String(n++ % 250)}`
-
-interface Options {
-  cookie?: string
-  origin?: string
-  ip?: string
-  contentType?: string
-}
-
-const post = (path: string, body: unknown, options: Options = {}) =>
-  server.request(`${BASE}${path}`, {
-    method: 'POST',
-    headers: {
-      'content-type': options.contentType ?? 'application/json',
-      origin: options.origin ?? BASE,
-      'x-forwarded-for': options.ip ?? nextIp(),
-      ...(options.cookie && { cookie: options.cookie }),
-    },
-    body: typeof body === 'string' ? body : JSON.stringify(body),
-  })
-
-const action = (name: string, input: unknown, options: Options & { confirmed?: boolean } = {}) =>
-  post(
-    `/api/actions/${name}`,
-    { input, ...(options.confirmed !== undefined && { confirmed: options.confirmed }) },
-    options,
-  )
-
-/** An admin with the given roles, signed in through the server; `totp` turns 2FA on. */
-async function signedIn(roles: string[], totp = false) {
-  const email = `admin${String(n++)}@example.com`
-  const { id } = await auth.identity.createAdmin({ email, name: 'Admin', password: PASSWORD })
-  for (const role of roles) {
-    await database.client`insert into admin_user_role (user_id, role_id) values (${id}, ${role})`
-  }
-  const ip = nextIp()
-  const jar = new Map<string, string>()
-  const send = async (path: string, body: unknown) => {
-    const cookie = [...jar].map(([k, v]) => `${k}=${v}`).join('; ')
-    const response = await post(path, body, { ip, ...(cookie && { cookie }) })
-    for (const c of response.headers.getSetCookie()) {
-      const [pair = ''] = c.split(';')
-      const [name = '', value = ''] = pair.split('=')
-      if (value) jar.set(name, value)
-      else jar.delete(name)
-    }
-    return response
-  }
-  expect((await send('/api/auth/sign-in/email', { email, password: PASSWORD })).status).toBe(200)
-  if (totp) {
-    const enabled = (await (
-      await send('/api/auth/two-factor/enable', { password: PASSWORD })
-    ).json()) as {
-      totpURI: string
-    }
-    const code = (OTPAuth.URI.parse(enabled.totpURI) as OTPAuth.TOTP).generate()
-    expect((await send('/api/auth/two-factor/verify-totp', { code })).status).toBe(200)
-  }
-  return { id, cookie: [...jar].map(([k, v]) => `${k}=${v}`).join('; ') }
-}
-
-const auditCount = async () =>
-  Number((await database.client`select count(*)::int as n from audit_log`)[0]?.n)
 
 test('sample.greet returns 200 for a guest', async () => {
   const response = await action('sample.greet', { name: 'Ada' })
@@ -227,8 +140,8 @@ test('/readyz is 503 when the database is down', async () => {
   const closed = createDb(process.env.DATABASE_URL ?? '')
   await closed.close()
   const down = createServer({
-    app,
-    auth,
+    app: t.app,
+    auth: t.auth,
     database: closed,
     rateLimiter: createRateLimiter(database),
     publicUrl: BASE,
@@ -262,7 +175,7 @@ test('a forged client address header cannot reach Better Auth', async () => {
       'x-forwarded-for': nextIp(),
       'x-aicommerce-client-ip': '1.2.3.4',
     },
-    body: JSON.stringify({ email: 'nobody@example.com', password: PASSWORD }),
+    body: JSON.stringify({ email: 'nobody@example.com', password: 'correct horse battery' }),
   })
   expect(response.status).toBe(401)
   const keys = await database.client`select key from rate_limit where key like 'auth:%1.2.3.4%'`
