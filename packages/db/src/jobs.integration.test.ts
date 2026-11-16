@@ -60,6 +60,16 @@ const enqueueThenFail = defineAction({
     throw new Error('after enqueue')
   },
 })
+const slow = defineJob({
+  name: 'slow.wait',
+  module: 'slow',
+  description: 'Takes three seconds',
+  payload: z.strictObject({}),
+  timeoutSeconds: 300,
+  handler: async () => {
+    await pause(3000)
+  },
+})
 const work = defineModule({ name: 'work', jobs: [ok, flaky, broken], actions: [enqueueThenFail] })
 
 beforeAll(async () => {
@@ -174,4 +184,26 @@ test('a job is due as soon as it is enqueued', async () => {
     await queue.enqueue(ok, { tag: String(i) })
     expect(await worker().runOnce()).toBe(1)
   }
+})
+
+test('the in-process timeout is the one stored on the job, not the current definition', async () => {
+  const slowApp = createApp({
+    modules: [defineModule({ name: 'slow', jobs: [slow] })],
+    enabled: ['slow'],
+    services: [provide(jobs, 'app', queue)],
+  })
+  // Enqueued before a deploy raised the timeout to 300 s.
+  const { id } = await queue.enqueue({ ...slow, timeoutSeconds: 1 }, {})
+  const started = Date.now()
+  await createWorker({ database, app: slowApp, log: () => undefined }).runOnce()
+  expect(Date.now() - started).toBeLessThan(2500)
+  expect(String((await job(id))?.last_error)).toContain('Timed out after 1 s')
+}, 10_000)
+
+test('a running job is left alone until 30 s past its timeout', async () => {
+  const { id } = await queue.enqueue(ok, { tag: 'busy' })
+  await database.client`update job set status = 'running', attempts = 1,
+    locked_at = now() - interval '310 seconds', locked_by = 'busy-worker' where id = ${id}`
+  expect(await worker().runOnce()).toBe(0)
+  expect(await job(id)).toMatchObject({ status: 'running', locked_by: 'busy-worker' })
 })

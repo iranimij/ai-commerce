@@ -1,6 +1,7 @@
 import { createAdminAuth } from '@aicommerce/auth'
 import {
   createDb,
+  createDbAuditSink,
   createRateLimiter,
   createWorker,
   runMigrations,
@@ -52,6 +53,7 @@ if (env.AICOMMERCE_ROLE !== 'worker') {
     rateLimiter: createRateLimiter(database),
     publicUrl: env.AICOMMERCE_PUBLIC_URL,
     production,
+    audit: createDbAuditSink(database),
     trustedProxies: env.AICOMMERCE_TRUSTED_PROXIES,
   })
   http = serve({ fetch: server.fetch, port: env.PORT })

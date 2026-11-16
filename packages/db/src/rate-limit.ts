@@ -7,16 +7,24 @@ export interface RateLimitRule {
 
 export interface RateLimiter {
   hit(key: string, rule: RateLimitRule): Promise<{ allowed: boolean; retryAfterSeconds: number }>
+  /** Deletes windows older than an hour, which no rule reads. */
+  prune(): Promise<void>
 }
 
 /**
  * Fixed-window counters in PostgreSQL, so every app process shares them (spec 5.7). Each hit
- * also deletes the key's older windows, which keeps the table as small as the set of active keys.
+ * deletes the key's older windows; about one hit in a hundred also prunes every key's.
  */
 export function createRateLimiter(database: Database): RateLimiter {
   const { client } = database
+  const prune = async () => {
+    await client`delete from rate_limit where window_start < now() - interval '1 hour'`
+  }
   return {
+    prune,
     async hit(key, { limit, windowSeconds }) {
+      // shortcut: random pruning on the request path; move it to a scheduled job once one exists.
+      if (Math.random() < 0.01) await prune()
       const [row] = await client`
         with bucket as (
           select to_timestamp(floor(extract(epoch from now()) / ${windowSeconds}) * ${windowSeconds}) as start

@@ -29,6 +29,6 @@ await ctx.service(jobs).enqueue(greetLater, { name: 'Ada' }, { key: 'greet-ada' 
 - On failure it is retried after `min(10 s × 2^(attempt − 1), 1 h)`, up to `maxAttempts`
   (default 5), then marked failed; `job.retry` runs it again.
 - A job may run more than once (a worker can die mid-job): make handlers idempotent.
-- `timeoutSeconds` (default 300) cuts a run short; a job left running by a dead worker is picked up
-  again after it.
+- `timeoutSeconds` (default 300) cuts a run short. It is stored on the job at enqueue, so raising
+  it affects new jobs only. A job left running by a dead worker is picked up 30 s after it.
 - With a `key`, a second enqueue while the first is pending or running is reported as a duplicate.

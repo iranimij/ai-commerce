@@ -36,3 +36,14 @@ test('a new window allows again', async () => {
   const rows = await database.client`select count(*)::int as n from rate_limit where key = 'ip:4'`
   expect(rows[0]?.n).toBe(1)
 })
+
+test('prune removes windows older than an hour and keeps current ones', async () => {
+  await database.client`insert into rate_limit (key, window_start, count)
+    values ('ip:old', now() - interval '2 hours', 1)`
+  const limiter = createRateLimiter(database)
+  await limiter.hit('ip:current', rule)
+  await limiter.prune()
+  const keys = (await database.client`select key from rate_limit`).map((r) => String(r.key))
+  expect(keys).not.toContain('ip:old')
+  expect(keys).toContain('ip:current')
+})

@@ -186,7 +186,7 @@ export function createPgResourceStore(database: Database): ResourceStore {
 
     revision: (r, revisionId) => revisions.get(r.name, revisionId),
 
-    async restore(r, revision, meta) {
+    async restore(r, revision, expected, meta) {
       const snapshot = revision.after ?? revision.before
       if (!snapshot) throw new ActionError('not_found', 'Revision has no record')
       const values: Record<string, unknown> = {}
@@ -203,6 +203,17 @@ export function createPgResourceStore(database: Database): ResourceStore {
       }
       const fields = checked.data
       const current = await getRow(r, revision.recordId, true)
+      if (current && Number(current.version) !== expected) {
+        throw new ActionError(
+          'conflict',
+          expected === undefined
+            ? 'The record exists; send the version you read'
+            : `Record changed since version ${String(expected)}; reload and try again`,
+        )
+      }
+      if (!current && expected !== undefined) {
+        throw new ActionError('conflict', 'The record was deleted; restore it without a version')
+      }
       let after: ResourceRecord
       if (current) {
         const before = toRecord(r, current)
