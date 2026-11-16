@@ -32,12 +32,13 @@ import { access } from '@aicommerce/module-access'
 import { catalog, catalogMigrations } from '@aicommerce/module-catalog'
 import { createDiskFileStore, files, media, mediaMigrations } from '@aicommerce/module-media'
 import { sample, sampleMigrations } from '@aicommerce/module-sample'
+import { search, searchMigrations } from '@aicommerce/module-search'
 import { seo, seoMigrations } from '@aicommerce/module-seo'
 import { setup, setupMigrations } from '@aicommerce/module-setup'
 import { system } from '@aicommerce/module-system'
 
 /** Every module this server can run. */
-export const firstPartyModules = [system, access, sample, setup, media, catalog, seo]
+export const firstPartyModules = [system, access, sample, setup, media, catalog, search, seo]
 
 /** Where uploaded files are kept when AICOMMERCE_FILES_DIR is not set. */
 export const DEFAULT_FILES_DIR = '/var/lib/aicommerce/files'
@@ -55,6 +56,7 @@ export const firstParty: Install = {
     setup: [setupMigrations],
     media: [mediaMigrations],
     catalog: [catalogMigrations],
+    search: [searchMigrations],
     seo: [seoMigrations],
   },
 }

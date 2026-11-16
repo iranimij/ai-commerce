@@ -9,6 +9,8 @@
   "catalog.product-view",
   "catalog.category-view",
   "catalog.menu",
+  "search.query",
+  "search.suggest",
   "seo.resolve",
   "seo.meta",
   "seo.sitemap"

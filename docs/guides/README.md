@@ -14,6 +14,7 @@ One page per contract. Each example is real code in `modules/sample`, so CI runs
 | [Attributes](attributes.md)               | Extra fields merchants and modules add to resources     |
 | [Media](media.md)                         | Image uploads, re-encoded to WebP and served            |
 | [Catalog](catalog.md)                     | Products, variants, categories and the public views     |
+| [Search](search.md)                       | Full-text search, filters, sorting and suggestions      |
 | [SEO](seo.md)                             | Clean URLs, redirects, meta, structured data, sitemap   |
 | [Settings](settings.md)                   | Typed configuration, with encrypted secrets             |
 | [Jobs](jobs.md)                           | Background work with retries                            |

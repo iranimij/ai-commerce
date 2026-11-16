@@ -110,6 +110,8 @@
     "mediaHint": "Image uploads, made safe and resized for every screen.",
     "catalog": "Catalog",
     "catalogHint": "Products, variants, categories and attribute sets.",
+    "search": "Search",
+    "searchHint": "Product search with filters, sorting and suggestions as you type.",
     "seo": "SEO",
     "seoHint": "Clean web addresses, redirects when one changes, and what search engines read."
   },
