@@ -15,3 +15,6 @@ test-results/
 
 # ai-commerce backup output
 backups/
+
+# JetBrains IDE settings are personal
+.idea/
