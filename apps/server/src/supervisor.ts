@@ -8,6 +8,37 @@ export interface Child {
   name: string
   command: string
   args: string[]
+  /** Added to this process's environment. */
+  env?: Record<string, string>
+}
+
+/**
+ * The processes for AICOMMERCE_ROLE. With the admin (`admin` is its server.js), the admin takes
+ * the public PORT and proxies /api to the server on the next port; a worker serves no HTTP.
+ */
+export function processes(
+  env: Record<string, string | undefined>,
+  main: string,
+  admin: string | null,
+): Child[] {
+  const server = { name: 'server', command: process.execPath, args: [main] }
+  if (env.AICOMMERCE_ROLE === 'worker' || admin === null) return [{ ...server, env: {} }]
+  const port = Number(env.PORT ?? 3000)
+  const internal = String(port + 1)
+  return [
+    { ...server, env: { PORT: internal } },
+    {
+      name: 'admin',
+      command: process.execPath,
+      args: [admin],
+      // Next.js listens on HOSTNAME, which Docker sets to the container id.
+      env: {
+        PORT: String(port),
+        HOSTNAME: '0.0.0.0',
+        AICOMMERCE_SERVER_URL: `http://127.0.0.1:${internal}`,
+      },
+    },
+  ]
 }
 
 /** Starts the children. `done` resolves once all have exited: 0 after `stop`, else the failure. */
@@ -20,8 +51,11 @@ export function supervise(children: Child[]): {
   let running = children.length
   let resolve: (code: number) => void = () => undefined
   const done = new Promise<number>((r) => (resolve = r))
-  const processes = children.map((child) => {
-    const proc = spawn(child.command, child.args, { stdio: 'inherit' })
+  const spawned = children.map((child) => {
+    const proc = spawn(child.command, child.args, {
+      stdio: 'inherit',
+      env: { ...process.env, ...child.env },
+    })
     let exited = false
     const exit = (status: number | null, signal: NodeJS.Signals | null) => {
       if (exited) return
@@ -44,27 +78,19 @@ export function supervise(children: Child[]): {
   })
   function stop(signal: NodeJS.Signals) {
     stopping = true
-    for (const proc of processes) if (proc.exitCode === null) proc.kill(signal)
+    for (const proc of spawned) if (proc.exitCode === null) proc.kill(signal)
   }
   return { stop, done }
 }
 
 if (import.meta.main) {
-  const role = process.env.AICOMMERCE_ROLE ?? 'all'
-  // main.js serves HTTP and/or runs the job worker, as AICOMMERCE_ROLE says.
-  const children: Child[] = [
-    {
-      name: 'server',
-      command: process.execPath,
-      args: [fileURLToPath(new URL('main.js', import.meta.url))],
-    },
-  ]
-  // The admin (apps/admin) joins the image in its own Docker stage; until that stage copies its
-  // standalone build here, the image runs without it.
+  // The admin's standalone server, copied here by the image's admin stage.
   const admin = fileURLToPath(new URL('../../admin/server.js', import.meta.url))
-  if (role !== 'worker' && existsSync(admin)) {
-    children.push({ name: 'admin', command: process.execPath, args: [admin] })
-  }
+  const children = processes(
+    process.env,
+    fileURLToPath(new URL('main.js', import.meta.url)),
+    existsSync(admin) ? admin : null,
+  )
   const { stop, done } = supervise(children)
   process.once('SIGTERM', () => {
     stop('SIGTERM')

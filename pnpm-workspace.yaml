@@ -2,3 +2,8 @@ packages:
   - packages/*
   - modules/*
   - apps/*
+  - e2e
+# next lists @playwright/test as an optional peer: without this, the e2e package would put
+# Playwright into the production image through next.
+overrides:
+  'next>@playwright/test': '-'

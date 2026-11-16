@@ -8,6 +8,7 @@ import { afterEach, expect, test, vi } from 'vitest'
 import en from '../messages/en.json' with { type: 'json' }
 import fa from '../messages/fa.json' with { type: 'json' }
 import { translatorFor } from './i18n'
+import { SetupFlow } from './SetupFlow'
 import { DatabaseStep } from './steps/DatabaseStep'
 import { DoneStep } from './steps/DoneStep'
 import { ExtrasStep } from './steps/ExtrasStep'
@@ -16,7 +17,8 @@ import { OwnerStep } from './steps/OwnerStep'
 import { ShopStep } from './steps/ShopStep'
 import { TwoFactorStep } from './steps/TwoFactorStep'
 
-vi.mock('next/navigation', () => ({ useRouter: () => ({ refresh: () => undefined }) }))
+const router = vi.hoisted(() => ({ refresh: vi.fn(), replace: vi.fn() }))
+vi.mock('next/navigation', () => ({ useRouter: () => router }))
 
 afterEach(() => {
   cleanup()
@@ -211,4 +213,31 @@ test('no step renders an untranslated string', () => {
       unmount()
     }
   }
+})
+
+test('the setup-link hint names a service of the shop compose file', () => {
+  const compose = readFileSync(
+    join(import.meta.dirname, '../../../packages/create/templates/compose.yaml'),
+    'utf8',
+  )
+  for (const messages of [en, fa]) {
+    const service = /docker compose logs ([a-z-]+)/.exec(messages.setup.noTokenBody)?.[1]
+    expect(compose).toMatch(new RegExp(`^  ${service ?? '(none)'}:$`, 'm'))
+  }
+})
+
+// Found end to end: history.replaceState ran before Next.js took over the history, so the next
+// router.refresh() (switching the language) put the token back into the address bar.
+test('the token leaves the address bar through the router', async () => {
+  window.history.replaceState(null, '', '/setup?token=the-token&x=1')
+  stubActions({
+    'setup.status': {
+      body: { ok: true, output: { finished: false, next: 'owner', database: { ok: true } } },
+    },
+  })
+  render(<SetupFlow locale="en" theme="system" />)
+  await waitFor(() => {
+    expect(router.replace).toHaveBeenCalledWith('/setup?x=1', { scroll: false })
+  })
+  expect(sessionStorage.getItem('aicommerce-setup-token')).toBe('the-token')
 })

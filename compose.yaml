@@ -1,4 +1,17 @@
 # Everything runs here. The host needs only Docker, git and gh.
+
+x-e2e-shop: &e2e-shop
+  image: ai-commerce:test
+  profiles: [e2e]
+  command: ['sh', '/e2e/shop.sh']
+  init: true
+  volumes:
+    - ./e2e/shop.sh:/e2e/shop.sh:ro
+    - e2e_logs:/logs
+  depends_on:
+    e2e-db:
+      condition: service_healthy
+
 services:
   app:
     build:
@@ -67,6 +80,8 @@ services:
       context: .
       dockerfile: docker/Dockerfile.dev
     working_dir: /app/apps/admin
+    # next start serves this build despite its warning about output: 'standalone'; the image runs
+    # .next/standalone/apps/admin/server.js instead.
     command: sh -c "exec node node_modules/next/dist/bin/next start --hostname 0.0.0.0 --port 3001"
     volumes:
       - .:/app
@@ -100,7 +115,92 @@ services:
     ports:
       - '127.0.0.1:8025:8025'
 
+  # End-to-end tests (./dev e2e): the production image ai-commerce:test, one shop per test that
+  # needs a fresh install, each with its own database. e2e/db.sql creates the databases and
+  # playwright's E2E_SHOPS counts the shops: keep all three in step.
+  e2e-db:
+    image: postgres:17
+    profiles: [e2e]
+    environment:
+      POSTGRES_USER: aicommerce
+      POSTGRES_PASSWORD: aicommerce
+      POSTGRES_DB: aicommerce
+    # In memory: every run starts from an empty server.
+    tmpfs: [/var/lib/postgresql/data]
+    volumes:
+      - ./e2e/db.sql:/docker-entrypoint-initdb.d/db.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U aicommerce -d shop14']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  e2e-shop-0: { <<: *e2e-shop, environment: { SHOP: '0' } }
+  e2e-shop-1: { <<: *e2e-shop, environment: { SHOP: '1' } }
+  e2e-shop-2: { <<: *e2e-shop, environment: { SHOP: '2' } }
+  e2e-shop-3: { <<: *e2e-shop, environment: { SHOP: '3' } }
+  e2e-shop-4: { <<: *e2e-shop, environment: { SHOP: '4' } }
+  e2e-shop-5: { <<: *e2e-shop, environment: { SHOP: '5' } }
+  e2e-shop-6: { <<: *e2e-shop, environment: { SHOP: '6' } }
+  e2e-shop-7: { <<: *e2e-shop, environment: { SHOP: '7' } }
+  e2e-shop-8: { <<: *e2e-shop, environment: { SHOP: '8' } }
+  e2e-shop-9: { <<: *e2e-shop, environment: { SHOP: '9' } }
+  e2e-shop-10: { <<: *e2e-shop, environment: { SHOP: '10' } }
+  e2e-shop-11: { <<: *e2e-shop, environment: { SHOP: '11' } }
+  e2e-shop-12: { <<: *e2e-shop, environment: { SHOP: '12' } }
+  e2e-shop-13: { <<: *e2e-shop, environment: { SHOP: '13' } }
+  e2e-shop-14: { <<: *e2e-shop, environment: { SHOP: '14' } }
+
+  playwright:
+    # The same version as @playwright/test in e2e/package.json.
+    image: mcr.microsoft.com/playwright:v1.64.1-noble
+    profiles: [e2e]
+    working_dir: /app/e2e
+    init: true
+    ipc: host
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - e2e_logs:/logs:ro
+    environment:
+      E2E_SHOPS: '15'
+      CI: ${CI:-}
+    depends_on:
+      e2e-shop-0:
+        condition: service_started
+      e2e-shop-1:
+        condition: service_started
+      e2e-shop-2:
+        condition: service_started
+      e2e-shop-3:
+        condition: service_started
+      e2e-shop-4:
+        condition: service_started
+      e2e-shop-5:
+        condition: service_started
+      e2e-shop-6:
+        condition: service_started
+      e2e-shop-7:
+        condition: service_started
+      e2e-shop-8:
+        condition: service_started
+      e2e-shop-9:
+        condition: service_started
+      e2e-shop-10:
+        condition: service_started
+      e2e-shop-11:
+        condition: service_started
+      e2e-shop-12:
+        condition: service_started
+      e2e-shop-13:
+        condition: service_started
+      e2e-shop-14:
+        condition: service_started
+
 volumes:
   node_modules:
   pnpm_store:
   db_data:
+  # In memory, so each run's shops start with an empty log.
+  e2e_logs:
+    driver_opts: { type: tmpfs, device: tmpfs }

@@ -82,6 +82,49 @@ jobs:
         run: docker build -f docker/Dockerfile -t ai-commerce:ci .
       - name: The image runs as a non-root user
         run: test "$(docker run --rm ai-commerce:ci id -u)" != 0
+      # As a shop owner would see it: the link the shop prints opens the setup page.
+      - name: The printed setup link opens the setup page
+        run: |
+          docker network create smoke
+          docker run -d --name smoke-db --network smoke \
+            -e POSTGRES_USER=aicommerce -e POSTGRES_PASSWORD=aicommerce postgres:17
+          until docker exec smoke-db pg_isready -h 127.0.0.1 -U aicommerce; do sleep 1; done
+          docker run -d --name smoke-shop --network smoke -p 127.0.0.1:3000:3000 \
+            -e DATABASE_URL=postgres://aicommerce_app:aicommerce_app@smoke-db:5432/aicommerce \
+            -e MIGRATION_DATABASE_URL=postgres://aicommerce:aicommerce@smoke-db:5432/aicommerce \
+            -e AICOMMERCE_PUBLIC_URL=http://localhost:3000 \
+            -e AICOMMERCE_SECRET_KEY=ZGV2ZWxvcG1lbnQtb25seS1zZWNyZXQta2V5LTMyYiE= \
+            -e AICOMMERCE_AUTH_SECRET=smoke-test-only-auth-secret-not-for-production \
+            ai-commerce:ci sh -c 'node packages/db/scripts/roles.mjs && exec node apps/server/dist/supervisor.js'
+          for _ in $(seq 60); do
+            link=$(docker logs smoke-shop 2>&1 | grep -o 'http://localhost:3000/setup?token=[A-Za-z0-9_-]*' || true)
+            [ -n "$link" ] && break
+            sleep 2
+          done
+          docker logs smoke-shop
+          test -n "$link"
+          test "$(curl -s --retry 10 --retry-connrefused -o /dev/null -w '%{http_code}' "$link")" = 200
+
+  # The setup page in a browser against the production image, each test on a fresh database.
+  e2e:
+    name: e2e
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the production image
+        run: docker build -f docker/Dockerfile -t ai-commerce:test .
+      - name: Install dependencies
+        run: ./dev pnpm install --frozen-lockfile
+      - name: End-to-end tests
+        run: ./dev e2e
+      - name: Keep the traces
+        if: failure()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: e2e-traces
+          path: e2e/test-results
+          retention-days: 14
 
   # Not a required check: a new advisory must not turn every unrelated pull request red.
   audit:

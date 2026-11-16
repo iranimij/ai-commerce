@@ -21,7 +21,7 @@
     "stepExtras": "Import and sample data",
     "stepDone": "Done",
     "noTokenTitle": "This page needs the setup link",
-    "noTokenBody": "Open the link printed in the terminal where AI Commerce started. To print it again, run “docker compose logs server” and look for the line that ends in /setup?token=…",
+    "noTokenBody": "Open the link printed in the terminal where AI Commerce started. To print it again, run “docker compose logs shop” and look for the line that ends in /setup?token=…",
     "finishedTitle": "Setup is finished",
     "finishedBody": "This shop is already set up, so the setup page is locked for good."
   },

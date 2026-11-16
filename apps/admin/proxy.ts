@@ -8,7 +8,10 @@ const dev = process.env.NODE_ENV === 'development'
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
   // Same origin for the browser, so the session cookie, CSRF and Origin rules stay as they are.
-  if (pathname.startsWith('/api/')) return NextResponse.rewrite(new URL(pathname + search, server))
+  // The health checks too: in the image the admin holds the public port.
+  if (pathname.startsWith('/api/') || pathname === '/healthz' || pathname === '/readyz') {
+    return NextResponse.rewrite(new URL(pathname + search, server))
+  }
 
   // A fresh nonce per page; Next.js adds it to its own scripts.
   const nonce = btoa(crypto.randomUUID())
