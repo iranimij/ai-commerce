@@ -48,6 +48,7 @@ const host = await createAppHost({
   secretKey: env.AICOMMERCE_SECRET_KEY,
   auth,
   fallback: env.AICOMMERCE_MODULES,
+  ...(env.AICOMMERCE_FILES_DIR && { filesDir: env.AICOMMERCE_FILES_DIR }),
 })
 const stopListening = await host.listen()
 const app = () => host.current()

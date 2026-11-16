@@ -24,6 +24,7 @@
     "@aicommerce/core": "workspace:*",
     "@aicommerce/db": "workspace:*",
     "@aicommerce/module-access": "workspace:*",
+    "@aicommerce/module-media": "workspace:*",
     "@aicommerce/module-sample": "workspace:*",
     "@aicommerce/module-setup": "workspace:*",
     "@aicommerce/module-system": "workspace:*",
@@ -32,6 +33,7 @@
     "zod": "^4.6.7"
   },
   "devDependencies": {
-    "otpauth": "9.6.0"
+    "otpauth": "9.6.0",
+    "sharp": "0.35.5"
   }
 }

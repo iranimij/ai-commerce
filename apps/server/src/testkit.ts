@@ -1,4 +1,7 @@
 // Test helpers: a real server on a fresh schema, and signed-in admins. Not part of the build.
+import { mkdtemp } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { createAdminAuth } from '@aicommerce/auth'
 import { createDbAuditSink, createRateLimiter, runMigrations } from '@aicommerce/db'
 import { createTestDb } from '@aicommerce/db/testing'
@@ -17,9 +20,10 @@ export interface RequestOptions {
   contentType?: string
 }
 
-export async function createTestServer() {
+export async function createTestServer(options: { modules?: string[] } = {}) {
   const database = await createTestDb()
-  const modules = ['system', 'access', 'sample']
+  const modules = options.modules ?? ['system', 'access', 'sample']
+  const filesDir = await mkdtemp(join(tmpdir(), 'files-'))
   await runMigrations(database, migrationSources(modules), { log: () => undefined })
   const auth = createAdminAuth({
     database,
@@ -35,6 +39,7 @@ export async function createTestServer() {
     secretKey: Buffer.alloc(32, 7),
     auth,
     fallback: modules,
+    filesDir,
   })
   const stopListening = await host.listen()
   const logs: string[] = []

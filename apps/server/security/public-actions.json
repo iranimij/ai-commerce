@@ -4,5 +4,6 @@
   "setup.create-owner",
   "setup.save-shop",
   "setup.choose-modules",
-  "setup.finish"
+  "setup.finish",
+  "media.file-info"
 ]

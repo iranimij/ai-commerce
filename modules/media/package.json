@@ -1,0 +1,30 @@
+{
+  "name": "@aicommerce/module-media",
+  "version": "0.0.0",
+  "description": "Image uploads: validated, re-encoded to WebP at fixed widths and served",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@aicommerce/core": "workspace:*",
+    "@aicommerce/db": "workspace:*",
+    "sharp": "0.35.5",
+    "zod": "^4.6.7"
+  }
+}

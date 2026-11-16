@@ -36,9 +36,13 @@ services:
     # Only on this machine: put a TLS proxy in front before opening it to the internet.
     ports:
       - '127.0.0.1:${AICOMMERCE_PORT:-3000}:3000'
+    # Uploaded images. Back this volume up along with the database.
+    volumes:
+      - files:/var/lib/aicommerce/files
     depends_on:
       migrate:
         condition: service_completed_successfully
 
 volumes:
   db_data:
+  files:

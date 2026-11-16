@@ -27,6 +27,8 @@ WORKDIR /app
 # Owned by root, run as node: the shop cannot rewrite its own code.
 COPY --from=server /app /app
 COPY --from=admin / /app
+# Uploaded files (AICOMMERCE_FILES_DIR): the one place the shop writes; mount a volume here.
+RUN mkdir -p /var/lib/aicommerce/files && chown node:node /var/lib/aicommerce/files
 USER node
 EXPOSE 3000
 CMD ["node", "apps/server/dist/supervisor.js"]

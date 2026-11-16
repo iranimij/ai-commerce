@@ -12,6 +12,7 @@ One page per contract. Each example is real code in `modules/sample`, so CI runs
 | [Privacy classes](privacy.md)             | What may reach an AI model                              |
 | [Resources and revisions](resources.md)   | Records with seven actions, history and restore         |
 | [Attributes](attributes.md)               | Extra fields merchants and modules add to resources     |
+| [Media](media.md)                         | Image uploads, re-encoded to WebP and served            |
 | [Settings](settings.md)                   | Typed configuration, with encrypted secrets             |
 | [Jobs](jobs.md)                           | Background work with retries                            |
 | [Admin sign-in and roles](admin-auth.md)  | Sessions, mandatory 2FA, roles and escalation rules     |

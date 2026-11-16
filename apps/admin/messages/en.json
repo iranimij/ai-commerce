@@ -105,7 +105,9 @@
     "setup": "Setup",
     "setupHint": "This setup page.",
     "sample": "Sample module",
-    "sampleHint": "A small example that shows how a module is built. Safe to switch off."
+    "sampleHint": "A small example that shows how a module is built. Safe to switch off.",
+    "media": "Media",
+    "mediaHint": "Image uploads, made safe and resized for every screen."
   },
   "extras": {
     "title": "Import and sample data",
