@@ -103,6 +103,18 @@ export interface AppInfo {
   permissions(): string[]
   /** Setting definitions of the enabled modules. */
   settings(): SettingDefinition[]
+  /** Every module the app knows, enabled or not, in the order given to `createApp`. */
+  modules(): KnownModule[]
+  /** Names of the enabled modules in this app, in load order. */
+  enabledModules(): string[]
+}
+
+export interface KnownModule {
+  name: string
+  label: string
+  description: string
+  required: boolean
+  depends: string[]
 }
 
 export const appInfo = defineService<AppInfo>('core.app-info')

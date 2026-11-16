@@ -12,6 +12,7 @@ export { createPgResourceStore } from './resources.js'
 export { createPgAttributeStore } from './attributes.js'
 export { decryptSecret, encryptSecret, parseSecretKey } from './crypto.js'
 export { createPgSettings, type PgSettingsOptions } from './settings.js'
+export { createPgModuleState, MODULES_CHANNEL } from './modules.js'
 export { createPgJobQueue, createWorker, type Worker, type WorkerOptions } from './jobs.js'
 
 import { defineService } from '@aicommerce/core'

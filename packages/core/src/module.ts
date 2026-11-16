@@ -26,6 +26,12 @@ export interface ActionWrap {
 export interface ModuleDefinition {
   /** Lower case letters, digits and dashes, starting with a letter. */
   name: string
+  /** Shown in the setup page and the module list. Default: the name. */
+  label?: string
+  /** One sentence on what the module adds. */
+  description?: string
+  /** Always enabled; cannot be switched off. */
+  required?: boolean
   depends?: string[]
   /**
    * First segments this module's action names may use. Default: the module name. A namespace

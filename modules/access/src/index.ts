@@ -16,6 +16,9 @@ export {
 /** Admin roles and accounts. */
 export const access = defineModule({
   name: 'access',
+  label: 'Admins and roles',
+  description: 'Admin accounts, roles and permissions',
+  required: true,
   namespaces: ['role', 'admin'],
   actions: [
     listRoles,

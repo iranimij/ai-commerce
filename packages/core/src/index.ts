@@ -86,3 +86,13 @@ export {
   type JobQueue,
   type JobStatus,
 } from './jobs.js'
+export {
+  dependentsOf,
+  moduleState,
+  PRESETS,
+  resolveModules,
+  type ModuleStateStore,
+  type PresetName,
+  type ResolvedModules,
+} from './presets.js'
+export type { KnownModule } from './attributes.js'
