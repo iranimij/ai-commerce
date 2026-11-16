@@ -447,3 +447,38 @@ because `grantAppRole` used the pool while the runner held the reserved connecti
 now takes the reserved connection, with a RED→GREEN test. (2) Compose ran node under sh and pnpm, so
 SIGTERM never reached it (killed after 10 s); it now uses `exec node`, and the graceful stop was
 checked by hand.
+
+### 87 · 2026-11-16 · Claude (implementer)
+
+Task 10: the guides cite runnable examples, so `modules/sample` gained an event, a job and a secret
+setting, with wrap and subscriber tests. Cost if wrong: none.
+
+### 88 · 2026-11-16 · Claude (implementer)
+
+Task 10: the "M0b done when" list is proven by one acceptance test over HTTP
+(`apps/server/src/acceptance.integration.test.ts`). Cost if wrong: none.
+
+### 89 · 2026-11-16 · Claude (implementer)
+
+Final review: `<resource>.restore` takes the `version` you read; a stale one is a conflict. Leave it
+out only to bring back a deleted record. Cost if wrong: none yet; no caller existed.
+
+### 90 · 2026-11-16 · Claude (implementer)
+
+Final review: every POST to `/api/auth/*` is audited by the server as `auth.<path>` with actor,
+address and outcome, never the body. Cost if wrong: a sign-in row shows the guest, not the admin.
+
+### 91 · 2026-11-16 · Claude (implementer)
+
+Final review: guests are rate-limited per IPv6 /64, and windows older than an hour are pruned on
+about one hit in a hundred until a scheduled job exists. Cost if wrong: a few ms on 1% of requests.
+
+### 92 · 2026-11-16 · Claude (implementer)
+
+Final review: a job's timeout is stored at enqueue and used by both the worker's timer and the
+sweep; the sweep waits 30 s more. Cost if wrong: raising a timeout affects new jobs only.
+
+### 93 · 2026-11-16 · Claude (implementer) · Open for Iman
+
+Sessions slide: `updateAge` 1 h keeps a session in use alive past 8 h. The spec only says "session
+expiry". An absolute cap (for example 24 h) is Iman's call.

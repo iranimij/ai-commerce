@@ -22,7 +22,8 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
     - the append-only `audit_log`.
   - `modules/sample` proves that a third-party module can change behaviour.
   - Tests: 71 unit and 14 integration.
-- **M0b is built** (PRs #23 to #34); the whole-branch review is next.
+- **M0b is done** (PRs #23 to #35). One whole-branch review found no critical and five
+  important issues, all fixed in #35 with tests.
   - `@aicommerce/core`: services, handler errors, module namespaces, privacy classes and
     `toModel`, resources (seven actions each), attributes, settings, jobs.
   - `@aicommerce/db`: the runtime role `aicommerce_app` (append-only audit and revisions),
@@ -33,16 +34,15 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
   - `apps/server`: the HTTP API, OpenAPI, CSRF and rate limits, `main.ts`, and
     `docker compose up server`.
   - Docs: `docs/guides/`, `docs/security/threat-model-m0b.md`, `docs/decisions/log.md`.
-  - Tests: 134 unit and 100 integration, including the M0b acceptance test over HTTP.
+  - Tests: 142 unit and 107 integration, including the M0b acceptance test over HTTP.
 - Logo: three proposals are waiting for Iman's choice at
   https://claude.ai/artifact/DxTRuJwEqrEExvfWaD6aZF. I recommend A, Spark bag.
 
 ## Next
 
-1. Final review of M0b, one fix pass, then Notion.
-2. Write and build M0c: i18n, CLI, design system, installer, contract test, QA gate. The QA gate
+1. Write and build M0c: i18n, CLI, design system, installer, contract test, QA gate. The QA gate
    checks the TOTP issuer with a real authenticator app.
-3. Move on to M1 and beyond.
+2. Move on to M1 and beyond.
 
 ## Rules for code written on top of M0b
 
@@ -61,6 +61,16 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
 - Never chain a merge after a local test run in one command: gate the merge on the result.
 - The guides in `docs/guides/` are the contract reference: update them with the contract.
 
+## Deferred minors from the M0b review (pick up where they fit)
+
+- `setting.set` has no expected version: two admins setting one key, last write wins.
+- `job.retry` on a failed job whose key already has an active job is a 500; make it `conflict`.
+- `enqueue` can return id "undefined" if the conflicting job finishes between insert and select.
+- Crafted cursors and `revisionId` above the int8 maximum give 500 instead of 400.
+- `admin.set-roles` can remove from a superior a role the caller holds; `admin.disable` needs the
+  target's permissions. Decide whether removing roles should too.
+- A disabled admin gets 401 (treated as a guest), not 403.
+
 ## Standing rules
 
 - Docker only. Use Iman's Chrome for manual QA.
@@ -72,6 +82,10 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
 - English everywhere.
 
 ## Open items
+
+- Sessions slide (decision 93): choose an absolute session cap, or keep sliding sessions.
+- Check decisions 21 and 34 in `docs/decisions/log.md`: attributed to Claude where Notion was
+  unclear.
 
 - Register the `@aicommerce` npm scope.
 - Gemini API key (M1): create it in the browser and store it in a git-ignored `.env`.
