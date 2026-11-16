@@ -13,3 +13,8 @@ export { createPgAttributeStore } from './attributes.js'
 export { decryptSecret, encryptSecret, parseSecretKey } from './crypto.js'
 export { createPgSettings, type PgSettingsOptions } from './settings.js'
 export { createPgJobQueue, createWorker, type Worker, type WorkerOptions } from './jobs.js'
+
+import { defineService } from '@aicommerce/core'
+import type { Database } from './client.js'
+/** The database, for modules that run typed queries on `current()`. */
+export const databaseService = defineService<Database>('db.database')
