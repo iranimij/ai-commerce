@@ -1,0 +1,44 @@
+# Your AI Commerce shop. Start it with: docker compose up
+# The secrets are in .env. AICOMMERCE_IMAGE overrides the image, for example a local build.
+x-image: &image ${AICOMMERCE_IMAGE:-ghcr.io/iranimij/ai-commerce:{{VERSION}}}
+
+services:
+  db:
+    image: postgres:17
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: aicommerce
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing from .env}
+      POSTGRES_DB: aicommerce
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    # No ports: the database is reachable only from the services below.
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U aicommerce -d aicommerce']
+      interval: 2s
+      timeout: 3s
+      retries: 30
+
+  # Runs once per start: creates the runtime role (its own password) and applies the migrations.
+  migrate:
+    image: *image
+    env_file: .env
+    command:
+      ['sh', '-c', 'node packages/db/scripts/roles.mjs && node packages/cli/dist/bin.js migrate']
+    depends_on:
+      db:
+        condition: service_healthy
+
+  shop:
+    image: *image
+    restart: unless-stopped
+    env_file: .env
+    # Only on this machine: put a TLS proxy in front before opening it to the internet.
+    ports:
+      - '127.0.0.1:${AICOMMERCE_PORT:-3000}:3000'
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+volumes:
+  db_data:
