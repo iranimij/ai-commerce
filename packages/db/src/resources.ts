@@ -7,6 +7,7 @@ import {
 } from '@aicommerce/core'
 import { sql, type SQL } from 'drizzle-orm'
 import type { Database } from './client.js'
+import { decodeCursor, encodeCursor } from './cursor.js'
 import { createRevisions, iso } from './revisions.js'
 
 const IDENTIFIER = /^[a-z_][a-z0-9_]*$/
@@ -30,29 +31,6 @@ function patchAttributes(patch: Record<string, unknown>): SQL {
     [sql`(attributes || ${json(set)})`, ...removed.map((k) => sql`${k}::text`)],
     sql` - `,
   )
-}
-
-function encodeCursor(value: unknown[]): string {
-  return Buffer.from(JSON.stringify(value)).toString('base64url')
-}
-
-function decodeCursor(cursor: string): [string, string] {
-  try {
-    const value: unknown = JSON.parse(Buffer.from(cursor, 'base64url').toString())
-    if (
-      Array.isArray(value) &&
-      value.length === 2 &&
-      typeof value[0] === 'string' &&
-      !Number.isNaN(Date.parse(value[0])) &&
-      typeof value[1] === 'string' &&
-      /^[0-9a-f-]{36}$/.test(value[1])
-    ) {
-      return [value[0], value[1]]
-    }
-  } catch {
-    // Falls through to the error below.
-  }
-  throw new ActionError('invalid_input', 'Invalid cursor')
 }
 
 /** Resources in PostgreSQL. Every query runs on the call's transaction when there is one. */
