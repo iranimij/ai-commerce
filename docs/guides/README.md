@@ -17,3 +17,6 @@ One page per contract. Each example is real code in `modules/sample`, so CI runs
 | [Admin sign-in and roles](admin-auth.md)  | Sessions, mandatory 2FA, roles and escalation rules     |
 | [HTTP API](http-api.md)                   | Calling actions over HTTP, OpenAPI, limits and headers  |
 | [Design system](ui.md)                    | Tokens, themes, right-to-left and the React components  |
+| [Translations](i18n.md)                   | Message catalogs, ICU, locales and right-to-left        |
+| [Switching modules](module-switching.md)  | Installed versus enabled, presets, no-restart reloads   |
+| [The ai-commerce command](cli.md)         | dev, migrate, inspect, modules, add, backup and restore |
