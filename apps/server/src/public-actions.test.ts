@@ -26,6 +26,8 @@ test('the public actions are exactly the reviewed list', () => {
   // setup.* are public by design: each handler checks the one-time token or a signed-in owner,
   // the server limits token guesses per address (per admin when signed in), and all refuse once
   // setup is finished. media.file-info gives only an image's width, for the public image route.
+  // catalog.product-view, category-view and menu return only active products, enabled
+  // categories and variants, and public attributes.
   expect(actual).toEqual([...reviewed].sort())
 })
 

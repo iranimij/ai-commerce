@@ -107,7 +107,9 @@
     "sample": "Sample module",
     "sampleHint": "A small example that shows how a module is built. Safe to switch off.",
     "media": "Media",
-    "mediaHint": "Image uploads, made safe and resized for every screen."
+    "mediaHint": "Image uploads, made safe and resized for every screen.",
+    "catalog": "Catalog",
+    "catalogHint": "Products, variants, categories and attribute sets."
   },
   "extras": {
     "title": "Import and sample data",
