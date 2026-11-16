@@ -161,10 +161,49 @@ test('the AI key is stored as a secret setting', async () => {
   expect(JSON.stringify(audit?.input)).not.toContain(token)
 })
 
+test('a restart before 2FA issues a new token that carries setup on', async () => {
+  const { t, token: old } = await fresh()
+  await call(t, 'setup.create-owner', { ...owner, token: old })
+  // The tab closed before 2FA and the server restarted.
+  const token = await issueSetupToken(t.database)
+  expect(token).toEqual(expect.any(String))
+  expect(token).not.toBe(old)
+  if (!token) return
+  expect(await call(t, 'setup.save-shop', { ...shop, token: old })).toMatchObject({
+    ok: false,
+    error: { code: 'forbidden' },
+  })
+  expect(
+    await call(t, 'setup.create-owner', { ...owner, email: 'other@example.com', token }),
+  ).toMatchObject({ ok: false, error: { code: 'conflict' } })
+  expect(await next(t)).toBe('two-factor')
+  expect(await call(t, 'setup.save-shop', { ...shop, token })).toMatchObject({ ok: true })
+  await call(t, 'setup.choose-modules', { token, preset: 'minimal' })
+  expect(await call(t, 'setup.finish', { token })).toMatchObject({
+    ok: false,
+    error: { code: 'conflict', message: 'The owner must turn on two-factor authentication first' },
+  })
+  await turnOnTwoFactor(t)
+  expect(await call(t, 'setup.finish', { token })).toMatchObject({ ok: true })
+  expect(await issueSetupToken(t.database)).toBeNull()
+})
+
+test('strangers using up the address limit do not lock out the signed-in owner', async () => {
+  const { t, token } = await fresh()
+  await call(t, 'setup.create-owner', { ...owner, token })
+  const cookie = await t.signIn(owner.email, { totp: true })
+  // Everyone behind the admin's proxy shares one address.
+  const ip = '10.9.9.8'
+  for (let i = 0; i < 10; i++) {
+    await t.action('setup.save-shop', { ...shop, token: 'junk' }, { ip })
+  }
+  expect((await t.action('setup.save-shop', { ...shop, token: 'junk' }, { ip })).status).toBe(429)
+  expect((await t.action('setup.save-shop', shop, { cookie, ip })).status).toBe(200)
+})
+
 test('an owner who lost the token can carry on signed in, after 2FA', async () => {
   const { t, token } = await fresh()
   await call(t, 'setup.create-owner', { ...owner, token })
-  expect(await issueSetupToken(t.database)).toBeNull()
   const cookie = await t.signIn(owner.email, { totp: true })
   expect((await t.action('setup.save-shop', shop, { cookie })).status).toBe(200)
   expect(await next(t)).toBe('modules')

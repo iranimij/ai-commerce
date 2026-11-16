@@ -16,7 +16,7 @@ const MAX_AUTH_BODY = 64 * 1024
 const LIMITS = {
   guest: { limit: 120, windowSeconds: 60 },
   admin: { limit: 600, windowSeconds: 60 },
-  // Setup actions carry the one-time token: guessing it is limited per address, signed in or not.
+  // Setup actions carry the one-time token: guessing it is limited per address, or per signed-in admin.
   setup: { limit: 10, windowSeconds: 60 },
 }
 const STATUS: Record<string, ContentfulStatusCode> = {
@@ -251,7 +251,11 @@ export function createServer(options: ServerOptions): Hono<Env> {
       )
       const guarded =
         limited.allowed && name.startsWith('setup.') && name !== 'setup.status'
-          ? await rateLimiter.hit(`setup:${rateLimitAddress(clientIp(c))}`, LIMITS.setup)
+          ? await rateLimiter.hit(
+              // Everyone behind the admin's proxy shares an address; strangers must not lock out the owner.
+              session ? `setup:admin:${actor.id ?? ''}` : `setup:${rateLimitAddress(clientIp(c))}`,
+              LIMITS.setup,
+            )
           : limited
       if (!guarded.allowed) {
         c.header('Retry-After', String(guarded.retryAfterSeconds))

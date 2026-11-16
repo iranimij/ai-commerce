@@ -10,15 +10,14 @@ export function tokenMatches(token: string, storedHash: string | null): boolean 
 }
 
 /**
- * A fresh one-time token while setup is unfinished and no owner exists, or null. Only its SHA-256
- * is stored; each call replaces the one before. Run at startup, after migrations.
+ * A fresh one-time token while setup is unfinished, or null. Only its SHA-256 is stored; each call
+ * replaces the one before, so a restart recovers a setup whose link was lost. Run at startup, after
+ * migrations. create-owner still refuses a second owner and finish still needs 2FA.
  */
 export async function issueSetupToken(database: Database): Promise<string | null> {
   const { client } = database
   const [state] = await client`select finished_at from setup_state`
   if (!state || state.finished_at !== null) return null
-  const [owner] = await client`select 1 from admin_user_role where role_id = 'owner' limit 1`
-  if (owner) return null
   const token = randomBytes(32).toString('base64url')
   await client`update setup_state set token_hash = ${hashToken(token)}`
   return token
