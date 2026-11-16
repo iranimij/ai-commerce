@@ -53,6 +53,7 @@ await call('catalog.menu', {})
 | `catalog.product-view`                            | `{ id, locale?, currency? }` → `ProductView`                    | public            |
 | `catalog.category-view`                           | `{ id, locale? }` → the category, its children, breadcrumbs     | public            |
 | `catalog.menu`                                    | `{ locale? }` → the enabled tree, three levels deep             | public            |
+| `catalog.install-sample`                          | `{}` → the counts of what it added (see below)                  | `catalog.manage`  |
 | `productCards(ctx, ids, { locale?, currency? })`  | Cards of the active products among `ids`, in order              | (code, for reads) |
 
 Tables: `catalog_category`, `catalog_attribute_set`, `catalog_product`, `catalog_product_variant`
@@ -88,3 +89,26 @@ a category's products are `catalog_product.category_ids @> '["<id>"]'` (GIN-inde
 - `price.from` is true when the enabled variants' prices differ; the amount is the lowest.
 - Translations fall back field by field: the asked locale, then the shop language, then the
   record's own value. Descriptions are Markdown, never HTML.
+
+## Sample data
+
+`catalog.install-sample` adds a small catalog to try a shop with: the `public` select attributes
+`color` (with swatches) and `size`, the attribute set "Clothing", 8 categories in two levels, 30
+simple and 6 configurable products with 38 variants, one picture each and a Persian name for every
+product and category. It answers
+`{ attributes, categories, products, variants, images }`.
+
+- Everything is created through `ctx.call`, so the catalog rules, search and seo see it as they see
+  any write, and the whole install is one transaction: it all lands or nothing does.
+- The pictures are drawn from SVG with `sharp` at install time
+  ([`sample-images.ts`](../../modules/catalog/src/sample-images.ts)) and go through `media.upload`;
+  no image file ships.
+- Prices are in the shop currency (`shop.currency`, `conflict` when it is not set), with the same
+  numbers whatever the currency.
+- SKUs start with `SAMPLE-`. A second call while `SAMPLE-001` exists is `conflict` ("Sample data is
+  already installed"); so is a shop that already has a `color` or `size` attribute.
+- The setup page offers it ("Add sample products") when the catalog is among the chosen modules,
+  and calls it as the owner after `setup.finish`; a failure leaves setup finished, with a retry.
+- The data is a table at the top of [`sample-data.ts`](../../modules/catalog/src/sample-data.ts),
+  tested in [`sample-data.integration.test.ts`](../../apps/server/src/sample-data.integration.test.ts)
+  (with search and seo on).

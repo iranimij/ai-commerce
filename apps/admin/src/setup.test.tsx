@@ -102,6 +102,53 @@ test('the features step ticks dependencies and says why', async () => {
   })
 })
 
+test('the extras step offers sample data only with the catalog', () => {
+  stubActions({})
+  const { unmount } = render(
+    <ExtrasStep t={t} token="x" offerSample={false} onFinished={vi.fn()} />,
+  )
+  expect(screen.queryByRole('checkbox', { name: t('extras.sample') })).toBeNull()
+  unmount()
+  render(<ExtrasStep t={t} token="x" offerSample onFinished={vi.fn()} />)
+  const box = screen.getByRole('checkbox', { name: t('extras.sample') })
+  expect(box.getAttribute('aria-checked')).toBe('false')
+  expect(box.hasAttribute('disabled')).toBe(false)
+})
+
+test('ticking sample data installs it after setup, with a retry when it fails', async () => {
+  const fetch = stubActions({
+    'setup.finish': { body: { ok: true, output: { enabled: ['catalog', 'media', 'system'] } } },
+  })
+  const onFinished = vi.fn()
+  render(<ExtrasStep t={t} token="the-token" offerSample onFinished={onFinished} />)
+  const user = userEvent.setup()
+  await user.click(screen.getByRole('checkbox', { name: t('extras.sample') }))
+  await user.click(screen.getByRole('button', { name: t('extras.finish') }))
+  await waitFor(() => {
+    expect(onFinished).toHaveBeenCalledWith(['catalog', 'media', 'system'], true)
+  })
+  // Not before setup is finished: the done screen runs it.
+  expect(sentTo(fetch, 'catalog.install-sample')).toBeUndefined()
+  cleanup()
+
+  stubActions({
+    'catalog.install-sample': {
+      status: 500,
+      body: { ok: false, error: { code: 'internal', message: 'Internal error' } },
+    },
+  })
+  render(<DoneStep t={t} locale="en" enabled={['catalog']} sample />)
+  expect((await screen.findByRole('alert')).textContent).toContain(t('done.sampleFailed'))
+  // Setup itself is finished either way.
+  expect(screen.getByRole('heading', { name: t('done.title') })).toBeTruthy()
+
+  const counts = { attributes: 2, categories: 8, products: 36, variants: 38, images: 36 }
+  stubActions({ 'catalog.install-sample': { body: { ok: true, output: counts } } })
+  await user.click(screen.getByRole('button', { name: t('common.retry') }))
+  expect(await screen.findByText(t('done.sampleAdded', counts))).toBeTruthy()
+  expect(screen.queryByRole('button', { name: t('common.retry') })).toBeNull()
+})
+
 test('the owner step shows server errors next to the right field', async () => {
   const fetch = stubActions({
     'setup.create-owner': {
@@ -196,8 +243,9 @@ test('no step renders an untranslated string', () => {
       <TwoFactorStep key="4" t={t} credentials={null} onDone={vi.fn()} />,
       <ShopStep key="5" t={t} token="x" locale={locale} onSaved={vi.fn()} />,
       <FeaturesStep key="6" t={t} token="x" onChosen={vi.fn()} />,
-      <ExtrasStep key="7" t={t} token="x" onFinished={vi.fn()} />,
+      <ExtrasStep key="7" t={t} token="x" offerSample onFinished={vi.fn()} />,
       <DoneStep key="8" t={t} locale={locale} enabled={['system', 'access']} />,
+      <DoneStep key="10" t={t} locale={locale} enabled={['catalog']} sample />,
       <DoneStep key="9" t={t} locale={locale} enabled={null} />,
     ]
     for (const step of steps) {

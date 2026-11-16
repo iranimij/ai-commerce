@@ -29,6 +29,21 @@ for (const preset of ['minimal', 'full'] as const) {
   })
 }
 
+test('setup with sample data shows the counts', async ({ page, shop }) => {
+  await install(page, shop, { preset: 'full', sample: true })
+  // Added once the server has switched the catalog on; the images take a few seconds.
+  await expect(
+    page.getByText('Added 36 sample products with 38 variants, in 8 categories, with 36 pictures.'),
+  ).toBeVisible({ timeout: 60_000 })
+  for (const theme of [en.common.themeLight, en.common.themeDark]) {
+    await page.getByRole('button', { name: theme, exact: true }).click()
+    await expectAccessible(page, `done with sample data in ${theme}`)
+  }
+  // A visitor finds them.
+  const found = await call<{ total: number }>(page, shop, 'search.query', { q: 'scarf' })
+  expect(found.ok && found.output.total).toBeGreaterThan(0)
+})
+
 test('the setup page without the token explains how to get it', async ({ page, untouched }) => {
   await page.goto(`${untouched.origin}/setup`)
   await expect(

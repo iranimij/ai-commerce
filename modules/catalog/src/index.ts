@@ -3,6 +3,7 @@ import { defineModule } from '@aicommerce/core'
 import type { MigrationSource } from '@aicommerce/db'
 import { attributeSet, category, product, productVariant } from './resources.js'
 import { rules } from './rules.js'
+import { installSample } from './sample-data.js'
 import { categoryView, menu, productView } from './views.js'
 
 export {
@@ -45,6 +46,6 @@ export const catalog = defineModule({
   description: 'Products, variants, categories and attribute sets',
   depends: ['media'],
   resources: [category, attributeSet, product, productVariant],
-  actions: [productView, categoryView, menu],
+  actions: [productView, categoryView, menu, installSample],
   wraps: rules,
 })
