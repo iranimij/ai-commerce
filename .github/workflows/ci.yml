@@ -57,6 +57,12 @@ jobs:
       - run: pnpm test
       - run: pnpm test:integration
       - run: pnpm build
+      # The sample third-party module through the real server: fails by name when a core change breaks a module.
+      - name: Contract test (sample module)
+        run: |
+          pnpm --filter @aicommerce/module-sample test
+          pnpm --filter @aicommerce/module-sample test:integration
+          pnpm --filter @aicommerce/server exec vitest run --config vitest.integration.config.ts src/contract.integration.test.ts
 
   # Not a required check: a new advisory must not turn every unrelated pull request red.
   audit:

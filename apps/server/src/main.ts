@@ -10,18 +10,19 @@ import {
 import { serve } from '@hono/node-server'
 import { readEnv } from './env.js'
 import { CLIENT_IP_HEADER, createServer } from './server.js'
-import { createAicommerce, migrationSources } from './wiring.js'
+import { createAppHost } from './app-host.js'
+import { migrationSources } from './wiring.js'
 
 const env = readEnv()
 const production = env.NODE_ENV === 'production'
 const appRole = new URL(env.DATABASE_URL).username
 const ownerRole = new URL(env.MIGRATION_DATABASE_URL).username
 
+// Kept open: switching a module on at run time runs its migrations as the owner.
 const owner = createDb(env.MIGRATION_DATABASE_URL, { max: 1 })
-await runMigrations(owner, migrationSources(env.AICOMMERCE_MODULES), {
+await runMigrations(owner, migrationSources([]), {
   ...(appRole !== ownerRole && { appRole }),
 })
-await owner.close()
 if (appRole === ownerRole) {
   console.warn('DATABASE_URL uses the owner role: the audit log is not protected from the app')
 }
@@ -36,12 +37,16 @@ const auth = createAdminAuth({
   production,
   ipHeader: CLIENT_IP_HEADER,
 })
-const app = createAicommerce({
+const host = await createAppHost({
   database,
+  owner,
+  ...(appRole !== ownerRole && { appRole }),
   secretKey: env.AICOMMERCE_SECRET_KEY,
   auth,
-  modules: env.AICOMMERCE_MODULES,
+  fallback: env.AICOMMERCE_MODULES,
 })
+const stopListening = await host.listen()
+const app = () => host.current()
 
 let http: ReturnType<typeof serve> | undefined
 let worker: Worker | undefined
@@ -78,7 +83,9 @@ async function shutdown(signal: string) {
     } else resolve()
   })
   await worker?.stop()
+  await stopListening()
   await database.close()
+  await owner.close()
   process.exit(0)
 }
 process.once('SIGTERM', () => void shutdown('SIGTERM'))

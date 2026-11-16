@@ -4,7 +4,8 @@ import { createDbAuditSink, createRateLimiter, runMigrations } from '@aicommerce
 import { createTestDb } from '@aicommerce/db/testing'
 import * as OTPAuth from 'otpauth'
 import { createServer } from './server.js'
-import { createAicommerce, migrationSources } from './wiring.js'
+import { createAppHost } from './app-host.js'
+import { migrationSources } from './wiring.js'
 
 export const BASE = 'http://localhost:3000'
 export const PASSWORD = 'correct horse battery'
@@ -28,10 +29,17 @@ export async function createTestServer() {
     production: false,
     ipHeader: 'x-aicommerce-client-ip',
   })
-  const app = createAicommerce({ database, secretKey: Buffer.alloc(32, 7), auth, modules })
+  const host = await createAppHost({
+    database,
+    owner: database,
+    secretKey: Buffer.alloc(32, 7),
+    auth,
+    fallback: modules,
+  })
+  const stopListening = await host.listen()
   const logs: string[] = []
   const server = createServer({
-    app,
+    app: () => host.current(),
     auth,
     database,
     rateLimiter: createRateLimiter(database),
@@ -116,11 +124,27 @@ export async function createTestServer() {
   const auditCount = async () =>
     Number((await database.client`select count(*)::int as n from audit_log`)[0]?.n)
 
+  /** Polls until `check` passes, for changes that arrive by notification. */
+  const until = async (check: () => Promise<boolean>, ms = 3000) => {
+    const end = Date.now() + ms
+    while (Date.now() < end) {
+      if (await check()) return true
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    }
+    return false
+  }
+
   return {
     database,
     auth,
-    app,
+    host,
+    /** The app running now; it changes when modules are switched. */
+    get app() {
+      return host.current()
+    },
     server,
+    until,
+    stop: stopListening,
     logs,
     nextIp,
     post,

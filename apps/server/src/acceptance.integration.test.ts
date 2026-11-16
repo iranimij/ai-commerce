@@ -11,6 +11,7 @@ beforeAll(async () => {
   t = await createTestServer()
 })
 afterAll(async () => {
+  await t.stop()
   await t.database.drop()
 })
 

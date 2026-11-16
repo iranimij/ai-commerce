@@ -18,6 +18,7 @@ beforeAll(async () => {
   ;({ database, server, action, post, signedIn, auditCount, nextIp, logs } = t)
 })
 afterAll(async () => {
+  await t.stop()
   await t.database.drop()
 })
 
