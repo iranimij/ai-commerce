@@ -4,6 +4,7 @@ import type { ModuleDefinition } from './module.js'
 import { createPipelines, type Pipelines } from './pipeline.js'
 import { createRegistry, type Registry, type RegistryOptions } from './registry.js'
 import { appInfo, type AppInfo, type AttributeDefinition } from './attributes.js'
+import type { JobDefinition } from './jobs.js'
 import { resourceActions, type ResourceDefinition } from './resource.js'
 import { createSettingsReader, settings, type SettingDefinition } from './settings.js'
 import type { ServiceDefinition, ServiceProvision } from './service.js'
@@ -28,6 +29,8 @@ export interface App {
   inspect(kind: 'service', name: string): ServiceInfo | undefined
   /** The implementation of a service; throws if nothing provides it. */
   service<T>(def: ServiceDefinition<T>): T
+  /** Jobs of the enabled modules. */
+  jobs(): JobDefinition[]
 }
 
 export interface ServiceInfo {
@@ -254,6 +257,20 @@ export function createApp(options: AppOptions): App {
       moduleAttributes.set(a.resource, list)
     }
   }
+  const jobDefs = new Map<string, JobDefinition>()
+  for (const m of ordered) {
+    for (const j of m.jobs ?? []) {
+      assertOwner(m.name, 'job', j.module)
+      const ns = j.name.split('.')[0] ?? ''
+      if (namespaceOwner.get(ns) !== m.name) {
+        throw new Error(
+          `Module "${m.name}" cannot declare job "${j.name}": namespace "${ns}" is not declared by module "${m.name}"`,
+        )
+      }
+      if (jobDefs.has(j.name)) throw new Error(`Job "${j.name}" is declared twice`)
+      jobDefs.set(j.name, j as JobDefinition)
+    }
+  }
   const settingDefs = new Map<string, SettingDefinition>()
   for (const m of ordered) {
     for (const s of m.settings ?? []) {
@@ -312,5 +329,6 @@ export function createApp(options: AppOptions): App {
     modules: ordered.map((m) => m.name),
     inspect: inspect as App['inspect'],
     service,
+    jobs: () => [...jobDefs.values()],
   }
 }

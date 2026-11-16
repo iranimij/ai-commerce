@@ -76,3 +76,13 @@ export {
   type SettingsReader,
   type SettingStore,
 } from './settings.js'
+export {
+  defineJob,
+  jobs,
+  type JobContext,
+  type JobDefinition,
+  type JobInfo,
+  type JobInput,
+  type JobQueue,
+  type JobStatus,
+} from './jobs.js'
