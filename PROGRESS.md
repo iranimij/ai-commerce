@@ -111,8 +111,6 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
 
 ## Open items
 
-- TOTP issuer (decision 76): Iman scans the setup QR code with a real authenticator app and says
-  whether it shows "AI Commerce" or "AI+Commerce".
 - Persian strings need a review by a native speaker.
 
 - Sessions slide (decision 93): choose an absolute session cap, or keep sliding sessions.
