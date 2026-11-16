@@ -1,7 +1,7 @@
 # The production image: the server, the job worker and the admin under one supervisor.
 # AICOMMERCE_ROLE picks the processes: all (default), web or worker. The admin takes PORT and
 # proxies /api to the server on PORT + 1. Build: docker build -f docker/Dockerfile .
-FROM node:24-bookworm-slim AS build
+FROM node:26-bookworm-slim AS build
 ENV CI=true TURBO_TELEMETRY_DISABLED=1 NEXT_TELEMETRY_DISABLED=1
 RUN npm install -g pnpm@12.21.0
 WORKDIR /app
@@ -21,7 +21,7 @@ RUN find . -name node_modules -type d -prune -exec rm -rf {} + \
   && pnpm install --frozen-lockfile --prod --offline --filter '!@aicommerce/admin' \
   && rm -rf .turbo apps/admin
 
-FROM node:24-bookworm-slim
+FROM node:26-bookworm-slim
 ENV NODE_ENV=production PORT=3000 NEXT_TELEMETRY_DISABLED=1
 WORKDIR /app
 # Owned by root, run as node: the shop cannot rewrite its own code.
