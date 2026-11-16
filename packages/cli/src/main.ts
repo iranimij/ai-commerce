@@ -1,5 +1,6 @@
 import { createInterface } from 'node:readline/promises'
-import { firstPartyModules } from '@aicommerce/server'
+import { firstParty, loadInstall } from '@aicommerce/server'
+import { add } from './commands/add.js'
 import { backup, restore } from './commands/backup.js'
 import { dev } from './commands/dev.js'
 import { inspect } from './commands/inspect.js'
@@ -19,12 +20,13 @@ export const USAGE = `Usage: ai-commerce <command>
   module enable <name>              Switch a module on, with what it needs
   module disable <name> [--yes]     Switch a module off; its data is kept
   module create <name> [--dir <d>]  Start a new module (default folder: modules/)
+  add <package> [--yes]             Install an extension after reviewing what it declares
   backup [--out <file>]             Dump the database (keep AICOMMERCE_SECRET_KEY with it)
   restore <file> [--yes]            Replace the database with a backup
 
 Exit codes: 0 ok, 1 error, 2 wrong usage.`
 
-const COMMANDS: Record<string, Command> = { dev, migrate, inspect, module, backup, restore }
+const COMMANDS: Record<string, Command> = { dev, migrate, inspect, module, add, backup, restore }
 
 async function ask(question: string): Promise<boolean> {
   if (!process.stdin.isTTY) return false
@@ -42,7 +44,7 @@ const defaults: Io = {
   out: (line) => process.stdout.write(`${line}\n`),
   err: (line) => process.stderr.write(`${line}\n`),
   ask,
-  modules: firstPartyModules,
+  install: firstParty,
 }
 
 /** Runs one command and returns its exit code. */
@@ -56,6 +58,7 @@ export async function run(argv: string[], overrides: Partial<Io> = {}): Promise<
     return 2
   }
   try {
+    if (!overrides.install) io.install = await loadInstall(io.cwd)
     return await command(rest, io)
   } catch (error) {
     if (error instanceof UsageError) {

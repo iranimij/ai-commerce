@@ -1,0 +1,9 @@
+{
+  "name": "aicommerce-module-gifts",
+  "version": "1.2.0",
+  "type": "module",
+  "exports": "./index.js",
+  "scripts": {
+    "postinstall": "node -e \"require('fs').writeFileSync(process.env.INIT_CWD + '/postinstall-ran', 'x')\""
+  }
+}

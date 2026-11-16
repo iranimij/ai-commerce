@@ -13,7 +13,7 @@ export async function migrate(argv: string[], io: Io): Promise<number> {
   const ownerRole = new URL(env.MIGRATION_DATABASE_URL).username
   const owner = createDb(env.MIGRATION_DATABASE_URL, { max: 1 })
   try {
-    const sources = migrationSources(await installedModules(owner, io))
+    const sources = migrationSources(await installedModules(owner, io), io.install)
     if (values.status) {
       let applied = new Set<string>()
       try {

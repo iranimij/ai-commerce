@@ -27,16 +27,18 @@ const wrap = (module: string, order: number) =>
   })
 
 test('inspect action prints the wraps in order', async () => {
-  const { io, out } = capture({
+  const install = {
     modules: [sample, wrap('sample-late', 200), wrap('sample-early', 100)],
-  })
+    migrations: {},
+  }
+  const { io, out } = capture({ install })
   expect(await run(['inspect', 'action', 'sample.greet'], io)).toBe(0)
   const text = out.join('\n')
   expect(text).toContain('sample.greet')
   expect(text.indexOf('sample-early')).toBeGreaterThan(-1)
   expect(text.indexOf('sample-early')).toBeLessThan(text.indexOf('sample-late'))
 
-  const json = capture({ modules: [sample, wrap('sample-late', 200), wrap('sample-early', 100)] })
+  const json = capture({ install })
   expect(await run(['inspect', 'action', 'sample.greet', '--json'], json.io)).toBe(0)
   expect(JSON.parse(json.out.join('\n'))).toMatchObject({
     name: 'sample.greet',

@@ -1,0 +1,6 @@
+{
+  "name": "not-a-module",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": "./index.js"
+}

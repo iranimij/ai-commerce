@@ -89,7 +89,7 @@ async function withApp(io: Io, fn: (app: App) => Promise<number>): Promise<numbe
   const database = createDb(env.DATABASE_URL, { max: 2 })
   try {
     const app = createApp({
-      modules: [...io.modules],
+      modules: [...io.install.modules],
       enabled: await installedModules(database, io),
       services: [provide(moduleState, 'app', createPgModuleState(database))],
       audit: createDbAuditSink(database),

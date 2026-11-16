@@ -1,7 +1,7 @@
 import type { AdminAuth } from '@aicommerce/auth'
 import { resolveModules, type App } from '@aicommerce/core'
 import { createPgModuleState, MODULES_CHANNEL, runMigrations, type Database } from '@aicommerce/db'
-import { createAicommerce, firstPartyModules, migrationSources } from './wiring.js'
+import { createAicommerce, firstParty, migrationSources, type Install } from './wiring.js'
 
 export interface AppHostOptions {
   /** The runtime connection. */
@@ -14,6 +14,8 @@ export interface AppHostOptions {
   auth: AdminAuth
   /** Modules of a fresh install, before anything is stored (AICOMMERCE_MODULES). */
   fallback: readonly string[]
+  /** Every module the shop can run. Default: the first-party modules. */
+  install?: Install
   /** A reload that failed, or a stored module this install no longer has. Default: console.error. */
   onError?: (error: unknown) => void
 }
@@ -35,7 +37,8 @@ export async function createAppHost(options: AppHostOptions): Promise<AppHost> {
       console.error(error)
     })
   const state = createPgModuleState(database)
-  const known = new Set(firstPartyModules.map((m) => m.name))
+  const install = options.install ?? firstParty
+  const known = new Set(install.modules.map((m) => m.name))
 
   const build = async (): Promise<App> => {
     const stored = await state.enabled()
@@ -44,8 +47,8 @@ export async function createAppHost(options: AppHostOptions): Promise<AppHost> {
       onError(new Error(`Module "${name}" is enabled but not installed; it is skipped`))
       return false
     })
-    const { enabled } = resolveModules(firstPartyModules, wanted)
-    await runMigrations(options.owner, migrationSources(enabled), {
+    const { enabled } = resolveModules(install.modules, wanted)
+    await runMigrations(options.owner, migrationSources(enabled, install), {
       ...(options.appRole && { appRole: options.appRole }),
       log: () => undefined,
     })
