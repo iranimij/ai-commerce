@@ -7,12 +7,17 @@ import { defineService } from './service.js'
 
 export type AttributeType = 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multiselect'
 
+/** How an option looks: a colour, or a media file (its id). */
+export type Swatch = { color: string } | { file: string }
+
 export interface AttributeDefinition {
   resource: string
   code: string
   label: string
   type: AttributeType
   options?: string[]
+  /** Swatches by option, for select types. */
+  swatches?: Record<string, Swatch>
   required: boolean
   privacy: Exclude<PrivacyClass, 'secret'>
   /** Module attributes come with code and cannot be deleted by a merchant. */
@@ -36,6 +41,15 @@ export const attributeInput = z
       .max(500)
       .refine((o) => new Set(o).size === o.length, 'Options must be unique')
       .optional(),
+    swatches: z
+      .record(
+        z.string(),
+        z.union([
+          z.strictObject({ color: z.string().regex(/^#[0-9a-f]{6}$/i) }),
+          z.strictObject({ file: z.uuid() }),
+        ]),
+      )
+      .optional(),
     required: z.boolean().default(false),
     privacy: z.enum(['public', 'internal', 'personal']).default('personal'),
   })
@@ -43,6 +57,12 @@ export const attributeInput = z
     message: 'Options are required for select types and only allowed for them',
     path: ['options'],
   })
+  .refine(
+    (a) =>
+      a.swatches === undefined ||
+      (SELECT_TYPES.has(a.type) && Object.keys(a.swatches).every((k) => a.options?.includes(k))),
+    { message: 'Swatches must name options of a select type', path: ['swatches'] },
+  )
 
 export type AttributeInput = z.input<typeof attributeInput>
 
@@ -51,9 +71,15 @@ export function defineAttribute(input: AttributeInput): AttributeDefinition {
   return { ...stripUndefined(parsed), source: 'module' }
 }
 
-function stripUndefined<T extends { options?: string[] | undefined }>(value: T) {
-  const { options, ...rest } = value
-  return options === undefined ? rest : { ...rest, options }
+function stripUndefined<
+  T extends { options?: string[] | undefined; swatches?: Record<string, Swatch> | undefined },
+>(value: T) {
+  const { options, swatches, ...rest } = value
+  return {
+    ...rest,
+    ...(options === undefined ? {} : { options }),
+    ...(swatches === undefined ? {} : { swatches }),
+  }
 }
 
 /** Builds a merchant attribute from validated input. */
