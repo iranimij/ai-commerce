@@ -1,5 +1,6 @@
 import {
   ActionError,
+  isStructured,
   type ResourceDefinition,
   type ResourceRecord,
   type ResourceStore,
@@ -23,6 +24,35 @@ const json = (value: unknown) => sql`${JSON.stringify(value)}::jsonb`
 
 type Row = Record<string, unknown>
 
+// Absent is NULL; arrays and objects go to their jsonb column as one value.
+const write = (value: unknown, structured: boolean): SQL =>
+  value === undefined || value === null ? sql`null` : structured ? json(value) : sql`${value}`
+
+/** A unique violation (23505) as `conflict`, naming the field when the constraint is `<table>_<column>_key`. */
+function uniqueConflict(r: ResourceDefinition, error: unknown): ActionError | undefined {
+  let e: unknown = error
+  while (e instanceof Error && (e as { code?: unknown }).code !== '23505') e = e.cause
+  if (!(e instanceof Error)) return undefined
+  const name = (e as { constraint_name?: string }).constraint_name ?? ''
+  const prefix = `${r.table}_`
+  const col = name.startsWith(prefix) && name.endsWith('_key') ? name.slice(prefix.length, -4) : ''
+  const field = Object.keys(r.fields.shape).find((f) => column(f) === col)
+  return new ActionError(
+    'conflict',
+    field
+      ? `${r.label.singular} with this ${field} already exists`
+      : `${r.label.singular} already exists`,
+  )
+}
+
+async function mapUnique<T>(r: ResourceDefinition, fn: () => Promise<T>): Promise<T> {
+  try {
+    return await fn()
+  } catch (error) {
+    throw uniqueConflict(r, error) ?? error
+  }
+}
+
 // Given keys replace their values; a null value removes the key.
 function patchAttributes(patch: Record<string, unknown>): SQL {
   const set = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== null))
@@ -38,7 +68,11 @@ export function createPgResourceStore(database: Database): ResourceStore {
   const run = async (query: SQL): Promise<Row[]> => await database.current().execute(query)
 
   const fieldsOf = (r: ResourceDefinition) =>
-    Object.keys(r.fields.shape).map((field) => ({ field, col: column(field) }))
+    Object.entries(r.fields.shape).map(([field, schema]) => ({
+      field,
+      col: column(field),
+      structured: isStructured(schema),
+    }))
 
   const select = (r: ResourceDefinition) =>
     sql`select *, ${iso('created_at')} as "__created", ${iso('updated_at')} as "__updated" from ${ident(r.table)}`
@@ -88,7 +122,7 @@ export function createPgResourceStore(database: Database): ResourceStore {
   const assignments = (r: ResourceDefinition, values: Record<string, unknown>) =>
     fieldsOf(r)
       .filter(({ field }) => field in values)
-      .map(({ field, col }) => sql`${ident(col)} = ${values[field] ?? null}`)
+      .map(({ field, col, structured }) => sql`${ident(col)} = ${write(values[field], structured)}`)
 
   const insert = async (
     r: ResourceDefinition,
@@ -109,7 +143,7 @@ export function createPgResourceStore(database: Database): ResourceStore {
       createdAt === null ? NOW : sql`${createdAt}::timestamptz`,
       NOW,
       json(attributes),
-      ...present.map(({ field }) => sql`${values[field]}`),
+      ...present.map(({ field, structured }) => write(values[field], structured)),
     ]
     const [row] = await run(sql`with inserted as (
         insert into ${ident(r.table)} (${sql.join(cols, sql`, `)})
@@ -148,7 +182,7 @@ export function createPgResourceStore(database: Database): ResourceStore {
     },
 
     async create(r, values, attributes, meta) {
-      const record = await insert(r, null, 1, values, attributes, null)
+      const record = await mapUnique(r, () => insert(r, null, 1, values, attributes, null))
       await writeRevision(r, record.id, 1, meta, null, record)
       return record
     },
@@ -161,10 +195,12 @@ export function createPgResourceStore(database: Database): ResourceStore {
         ...(attributes === undefined ? [] : [sql`attributes = ${patchAttributes(attributes)}`]),
         ...assignments(r, values),
       ]
-      const [row] = await run(sql`with updated as (
+      const [row] = await mapUnique(r, () =>
+        run(sql`with updated as (
           update ${ident(r.table)} set ${sql.join(set, sql`, `)}
           where id = ${id} and version = ${expected} returning *)
-        select *, ${iso('created_at')} as "__created", ${iso('updated_at')} as "__updated" from updated`)
+        select *, ${iso('created_at')} as "__created", ${iso('updated_at')} as "__updated" from updated`),
+      )
       if (!row) {
         throw new ActionError(
           'conflict',
@@ -225,22 +261,26 @@ export function createPgResourceStore(database: Database): ResourceStore {
           sql`attributes = ${json(snapshot.attributes)}`,
           ...assignments(r, all),
         ]
-        const [row] = await run(sql`with updated as (
+        const [row] = await mapUnique(r, () =>
+          run(sql`with updated as (
             update ${ident(r.table)} set ${sql.join(set, sql`, `)}
             where id = ${revision.recordId} returning *)
-          select *, ${iso('created_at')} as "__created", ${iso('updated_at')} as "__updated" from updated`)
+          select *, ${iso('created_at')} as "__created", ${iso('updated_at')} as "__updated" from updated`),
+        )
         after = toRecord(r, row ?? {})
         await writeRevision(r, after.id, after.version, meta, before, after)
       } else {
         const [last] = await run(sql`select coalesce(max(version), 0) as v from revision
           where resource = ${r.name} and record_id = ${revision.recordId}`)
-        after = await insert(
-          r,
-          revision.recordId,
-          Number(last?.v) + 1,
-          fields,
-          snapshot.attributes,
-          snapshot.createdAt,
+        after = await mapUnique(r, () =>
+          insert(
+            r,
+            revision.recordId,
+            Number(last?.v) + 1,
+            fields,
+            snapshot.attributes,
+            snapshot.createdAt,
+          ),
         )
         await writeRevision(r, after.id, after.version, meta, null, after)
       }

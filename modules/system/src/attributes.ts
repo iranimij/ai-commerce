@@ -16,6 +16,9 @@ const definition = z.object({
   label: z.string(),
   type: z.string(),
   options: z.array(z.string()).optional(),
+  swatches: z
+    .record(z.string(), z.union([z.object({ color: z.string() }), z.object({ file: z.string() })]))
+    .optional(),
   required: z.boolean(),
   privacy: z.string(),
   source: z.enum(['module', 'merchant']),
