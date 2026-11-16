@@ -27,7 +27,8 @@ test('the public actions are exactly the reviewed list', () => {
     .sort()
   // A new public action must be reviewed and added to security/public-actions.json.
   // setup.* are public by design: each handler checks the one-time token or a signed-in owner,
-  // the server limits token guesses per address, and all refuse once setup is finished.
+  // the server limits token guesses per address (per admin when signed in), and all refuse once
+  // setup is finished.
   expect(actual).toEqual([...reviewed].sort())
 })
 
