@@ -90,6 +90,8 @@ export const greetLater = defineJob({
 
 export const sample = defineModule({
   name: 'sample',
+  label: 'Sample module',
+  description: 'A small example module that shows every contract; safe to switch off',
   actions: [greet],
   resources: [note],
   settings: [greetingWord, webhookSecret],

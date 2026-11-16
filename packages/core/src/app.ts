@@ -296,6 +296,15 @@ export function createApp(options: AppOptions): App {
     moduleAttributes: (resource) => [...(moduleAttributes.get(resource) ?? [])],
     permissions: () => [...permissions],
     settings: () => [...settingDefs.values()],
+    modules: () =>
+      options.modules.map((m) => ({
+        name: m.name,
+        label: m.label ?? m.name,
+        description: m.description ?? '',
+        required: m.required === true,
+        depends: [...(m.depends ?? [])],
+      })),
+    enabledModules: () => ordered.map((m) => m.name),
   }
   providers.set(appInfo.name, { provider: 'core', replaced: [], implementation: info })
   // Without a store, every setting reads as its default (unit tests, tools).
