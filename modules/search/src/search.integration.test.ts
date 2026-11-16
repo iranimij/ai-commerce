@@ -71,7 +71,8 @@ afterAll(async () => {
 })
 beforeEach(async () => {
   await database.client`truncate catalog_category, catalog_attribute_set, catalog_product,
-    catalog_product_variant, catalog_sku, media_media_file, attribute, search_document, job`
+    catalog_product_variant, catalog_sku, media_media_file, attribute, search_document,
+    search_word, job`
 })
 
 const call = (name: string, input: unknown, actor: Actor = admin) =>

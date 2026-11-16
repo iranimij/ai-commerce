@@ -72,8 +72,13 @@ trigger, so a row written directly must be complete:
 | `facets`     | `jsonb`          | `{"color": ["red", "blue"]}`: select and multiselect values, enabled variants' too  |
 | `prices`     | `jsonb`          | `{"EUR": 1900}`: the lowest channel-free amount per currency, enabled variants' too |
 
-Indexes: GIN on `tsv`, GIN `jsonb_path_ops` on `categories` and `facets`, GiST `gist_trgm_ops`
-on `suggest`, and a B-tree on `(created_at, product_id)`.
+Indexes: GIN on `tsv`, GIN `jsonb_path_ops` on `categories` and `facets`, GiST
+`gist_trgm_ops(siglen = 256)` on `suggest`, and a B-tree on `(created_at, product_id)`.
+
+A second table, `search_word (word text primary key)` with a GiST trigram index, holds every
+distinct `simple` lexeme of `suggest` (the words of the names, unaccented and lower-cased). The
+engine adds a document's words when it indexes it and never removes one; a row written directly
+must add its words too. Timings on 1,000,000 products: [`docs/benchmarks/m1a.md`](../benchmarks/m1a.md).
 
 ## Rules that bite
 
@@ -92,6 +97,11 @@ on `suggest`, and a B-tree on `(created_at, product_id)`.
   while it is being typed (it ends the query with a letter or digit). Its lexemes are quoted and
   escaped; nothing the visitor types becomes tsquery syntax. A query of only stop words or
   punctuation finds nothing.
+- Suggestions first correct each typed word: a word within 0.34 word distance of a known name
+  word (any prefix of 2 letters or more is) stays as typed; otherwise it becomes the nearest known
+  word if that is within 0.7, or is dropped. The 6 products nearest to the corrected text follow;
+  among products equally near, which 6 come back is not fixed. Categories are matched on the text
+  as typed.
 - Filters are public `select` and `multiselect` attributes on `product`; any other code is
   `invalid_input`. Each facet's counts ignore that facet's own filter, so the other values stay
   offered. A variant's options count only while it is enabled.

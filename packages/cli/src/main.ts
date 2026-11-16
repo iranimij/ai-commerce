@@ -2,10 +2,12 @@ import { createInterface } from 'node:readline/promises'
 import { firstParty, loadInstall } from '@aicommerce/server'
 import { add } from './commands/add.js'
 import { backup, restore } from './commands/backup.js'
+import { bench } from './commands/bench.js'
 import { dev } from './commands/dev.js'
 import { inspect } from './commands/inspect.js'
 import { migrate } from './commands/migrate.js'
 import { module } from './commands/module.js'
+import { seed } from './commands/seed.js'
 import { UsageError, type Command, type Io } from './io.js'
 
 export type { Io } from './io.js'
@@ -23,10 +25,22 @@ export const USAGE = `Usage: ai-commerce <command>
   add <package> [--yes]             Install an extension after reviewing what it declares
   backup [--out <file>]             Dump the database (keep AICOMMERCE_SECRET_KEY with it)
   restore <file> [--yes]            Replace the database with a backup
+  seed catalog --products <n>       Write a large test catalog (needs AICOMMERCE_ALLOW_SEED=1)
+  bench search                      Time five search shapes, 200 calls each: p50 and p95
 
 Exit codes: 0 ok, 1 error, 2 wrong usage.`
 
-const COMMANDS: Record<string, Command> = { dev, migrate, inspect, module, add, backup, restore }
+const COMMANDS: Record<string, Command> = {
+  dev,
+  migrate,
+  inspect,
+  module,
+  add,
+  backup,
+  restore,
+  seed,
+  bench,
+}
 
 async function ask(question: string): Promise<boolean> {
   if (!process.stdin.isTTY) return false
