@@ -168,6 +168,7 @@ M0 is split into three plans. This is the third.
   - `'a required module cannot be disabled'`;
   - `'set notifies aicommerce_modules only on commit'` (a rolled-back call sends nothing);
   - `'module changes have revisions and audit rows'`.
+
 - [ ] **Step 2: Run them.** Expected: FAIL.
 - [ ] **Step 3: Implement.** `system` and `access` are `required`. `module.disable` stays `destructive`, so it asks for confirmation; its description says the data is kept.
 - [ ] **Step 4: Run** `./dev pnpm lint typecheck test test:integration`. Expected: PASS.
@@ -476,6 +477,7 @@ M0 is split into three plans. This is the third.
   5. File the report in Notion 08.
 
   Iman is asked once to scan the 2FA QR code with a real authenticator app and say what issuer name it shows (decision 76). The gate continues without waiting, and the item stays open until Iman answers.
+
 - [ ] **Step 4: Run** `./dev pnpm format:check`, the full suite and `./dev e2e`. Expected: PASS.
 - [ ] **Step 5: Commit** `docs: M0c guides, threat model, decisions and QA report`, then open the PR and merge it.
 
