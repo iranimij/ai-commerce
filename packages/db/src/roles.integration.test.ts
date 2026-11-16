@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, expect, test } from 'vitest'
-import type { Database } from './client.js'
+import { createDb, type Database } from './client.js'
 import { coreMigrations, runMigrations } from './migrate.js'
 import { appRoleName, createTestDb } from './test-db.js'
 
@@ -43,3 +43,17 @@ test('the app role cannot alter tables', async () => {
 test('the app role cannot rewrite migration records', async () => {
   await expect(app.client`delete from migrations`).rejects.toThrow('permission denied')
 })
+
+test('migrating with a single-connection pool and an app role finishes', async () => {
+  const single = createDb(process.env.MIGRATION_DATABASE_URL ?? process.env.DATABASE_URL ?? '', {
+    max: 1,
+    searchPath: database.schema,
+  })
+  try {
+    await expect(
+      runMigrations(single, [coreMigrations], { appRole: appRoleName(), log: () => undefined }),
+    ).resolves.toEqual([])
+  } finally {
+    await single.close()
+  }
+}, 10_000)
