@@ -85,7 +85,8 @@ beforeEach(async () => {
 const worker = (concurrency = 4) =>
   createWorker({ database, app, concurrency, log: () => undefined })
 const job = async (id: string) => (await database.client`select * from job where id = ${id}`)[0]
-const due = (id: string) => database.client`update job set run_at = now() where id = ${id}`
+const due = (id: string) =>
+  database.client`update job set run_at = now() - interval '1 second' where id = ${id}`
 
 test('a job enqueued in a rolled-back call never exists', async () => {
   const result = await app.registry.call('work.enqueue-then-fail', {}, { actor: systemActor })
@@ -165,4 +166,12 @@ test('start and stop run jobs in the background', async () => {
   w.start()
   await expect.poll(() => runs).toEqual(['bg'])
   await w.stop()
+})
+
+test('a job is due as soon as it is enqueued', async () => {
+  // run_at is stored to the millisecond; rounding up would put a new job just in the future.
+  for (let i = 0; i < 40; i++) {
+    await queue.enqueue(ok, { tag: String(i) })
+    expect(await worker().runOnce()).toBe(1)
+  }
 })

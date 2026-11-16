@@ -13,6 +13,9 @@ import { iso } from './revisions.js'
 
 type Row = Record<string, unknown>
 
+// run_at is stored to the millisecond; truncating keeps a job due now from rounding into the future.
+const NOW = sql.raw(`date_trunc('milliseconds', now())`)
+
 const nullable = (value: unknown) => (typeof value === 'string' ? value : null)
 
 const toInfo = (row: Row): JobInfo => ({
@@ -38,7 +41,7 @@ export function createPgJobQueue(database: Database): JobQueue {
     async enqueue(job, payload, options = {}) {
       const value = job.payload.parse(payload)
       const key = options.key ?? null
-      const runAt = options.runAt ? sql`${options.runAt.toISOString()}::timestamptz` : sql`now()`
+      const runAt = options.runAt ? sql`${options.runAt.toISOString()}::timestamptz` : NOW
       const [row] = await run(sql`insert into job
           (name, payload, key, max_attempts, timeout_seconds, run_at)
         values (${job.name}, ${JSON.stringify(value)}::jsonb, ${key}, ${job.maxAttempts},
@@ -73,7 +76,7 @@ export function createPgJobQueue(database: Database): JobQueue {
       const [row] = await run(sql`select status from job where id = ${id} for update`)
       if (!row) return 'not_found'
       if (row.status !== 'failed') return 'not_failed'
-      await run(sql`update job set status = 'pending', attempts = 0, run_at = now(),
+      await run(sql`update job set status = 'pending', attempts = 0, run_at = ${NOW},
         last_error = null, updated_at = now() where id = ${id}`)
       return 'ok'
     },
@@ -143,7 +146,7 @@ export function createWorker(options: WorkerOptions): Worker {
       log(`Job ${String(row.name)} ${id} failed`, error)
       await run(sql`update job set
           status = case when attempts >= max_attempts then 'failed' else 'pending' end,
-          run_at = now() + least(10 * power(2, attempts - 1), 3600) * interval '1 second',
+          run_at = ${NOW} + least(10 * power(2, attempts - 1), 3600) * interval '1 second',
           last_error = ${errorMessage(error)}, updated_at = now(),
           locked_at = null, locked_by = null
         where id = ${id} and locked_by = ${workerId}`)
