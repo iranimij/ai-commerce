@@ -53,7 +53,7 @@ afterAll(async () => {
 
 test('a fresh install runs the fallback modules plus the required ones', async () => {
   const host = await makeHost(database, ['sample'])
-  expect(host.current().modules).toEqual(['system', 'access', 'sample'])
+  expect(host.current().modules).toEqual(['system', 'access', 'sample', 'setup'])
 })
 
 test('enabling a module runs its migrations', async () => {

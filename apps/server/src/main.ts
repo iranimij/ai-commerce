@@ -10,6 +10,7 @@ import {
 import { serve } from '@hono/node-server'
 import { readEnv } from './env.js'
 import { CLIENT_IP_HEADER, createServer } from './server.js'
+import { issueSetupToken } from '@aicommerce/module-setup'
 import { createAppHost } from './app-host.js'
 import { migrationSources } from './wiring.js'
 
@@ -63,6 +64,14 @@ if (env.AICOMMERCE_ROLE !== 'worker') {
   })
   http = serve({ fetch: server.fetch, port: env.PORT })
   console.info(`AI Commerce listening on port ${String(env.PORT)}`)
+  const token = await issueSetupToken(database)
+  if (token) {
+    const url = `${env.AICOMMERCE_PUBLIC_URL.replace(/\/$/, '')}/setup?token=${token}`
+    const line = '='.repeat(Math.max(60, url.length + 4))
+    console.info(
+      `\n${line}\n  Finish setting up your shop. Open this link; it stops working once setup is finished:\n\n  ${url}\n${line}\n`,
+    )
+  }
 }
 if (env.AICOMMERCE_ROLE !== 'web') {
   worker = createWorker({ database, app })

@@ -1,0 +1,30 @@
+{
+  "name": "@aicommerce/module-setup",
+  "version": "0.0.0",
+  "description": "First-run setup: the owner account, the shop basics and the modules to start with",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@aicommerce/auth": "workspace:*",
+    "@aicommerce/core": "workspace:*",
+    "@aicommerce/db": "workspace:*",
+    "@aicommerce/i18n": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "zod": "^4.6.7"
+  }
+}

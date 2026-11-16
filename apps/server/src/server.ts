@@ -16,6 +16,8 @@ const MAX_AUTH_BODY = 64 * 1024
 const LIMITS = {
   guest: { limit: 120, windowSeconds: 60 },
   admin: { limit: 600, windowSeconds: 60 },
+  // Setup actions carry the one-time token: guessing it is limited per address, signed in or not.
+  setup: { limit: 10, windowSeconds: 60 },
 }
 const STATUS: Record<string, ContentfulStatusCode> = {
   invalid_input: 400,
@@ -247,8 +249,12 @@ export function createServer(options: ServerOptions): Hono<Env> {
         session ? `api:admin:${actor.id ?? ''}` : `api:ip:${rateLimitAddress(clientIp(c))}`,
         session ? LIMITS.admin : LIMITS.guest,
       )
-      if (!limited.allowed) {
-        c.header('Retry-After', String(limited.retryAfterSeconds))
+      const guarded =
+        limited.allowed && name.startsWith('setup.') && name !== 'setup.status'
+          ? await rateLimiter.hit(`setup:${rateLimitAddress(clientIp(c))}`, LIMITS.setup)
+          : limited
+      if (!guarded.allowed) {
+        c.header('Retry-After', String(guarded.retryAfterSeconds))
         return failure(c, 429, 'rate_limited', 'Too many requests')
       }
       let body: unknown
