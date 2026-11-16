@@ -16,6 +16,8 @@ export interface AppHostOptions {
   fallback: readonly string[]
   /** Every module the shop can run. Default: the first-party modules. */
   install?: Install
+  /** Where uploaded files are kept (AICOMMERCE_FILES_DIR). */
+  filesDir?: string
   /** A reload that failed, or a stored module this install no longer has. Default: console.error. */
   onError?: (error: unknown) => void
 }

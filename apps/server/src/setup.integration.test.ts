@@ -109,7 +109,7 @@ test('finish needs the owner to have 2FA', async () => {
 
 test.each([
   ['minimal', ['system', 'access', 'setup']],
-  ['full', ['system', 'access', 'sample', 'setup']],
+  ['full', ['system', 'access', 'sample', 'setup', 'media']],
 ])('finish enables the chosen preset and locks setup: %s', async (preset, expected) => {
   const { t, token } = await fresh()
   await call(t, 'setup.create-owner', { ...owner, token })

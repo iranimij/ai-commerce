@@ -2,17 +2,14 @@ import { readFileSync } from 'node:fs'
 import type { AdminAuth } from '@aicommerce/auth'
 import { createApp } from '@aicommerce/core'
 import type { Database, RateLimiter } from '@aicommerce/db'
-import { access } from '@aicommerce/module-access'
-import { sample } from '@aicommerce/module-sample'
-import { setup } from '@aicommerce/module-setup'
-import { system } from '@aicommerce/module-system'
 import { expect, test } from 'vitest'
 import { createServer } from './server.js'
+import { firstPartyModules } from './wiring.js'
 
 // Every first-party module, all enabled: what could ever be public.
 const app = createApp({
-  modules: [system, access, sample, setup],
-  enabled: ['system', 'access', 'sample', 'setup'],
+  modules: firstPartyModules,
+  enabled: firstPartyModules.map((m) => m.name),
   onError: () => undefined,
 })
 const reviewed = JSON.parse(
@@ -28,7 +25,7 @@ test('the public actions are exactly the reviewed list', () => {
   // A new public action must be reviewed and added to security/public-actions.json.
   // setup.* are public by design: each handler checks the one-time token or a signed-in owner,
   // the server limits token guesses per address (per admin when signed in), and all refuse once
-  // setup is finished.
+  // setup is finished. media.file-info gives only an image's width, for the public image route.
   expect(actual).toEqual([...reviewed].sort())
 })
 

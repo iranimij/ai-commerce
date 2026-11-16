@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto'
 import type { AdminAuth } from '@aicommerce/auth'
 import { guestActor, type App, type AuditEntry, type AuditSink } from '@aicommerce/core'
 import type { Database, RateLimiter } from '@aicommerce/db'
+import { files, servedWidth } from '@aicommerce/module-media'
 import { getConnInfo } from '@hono/node-server/conninfo'
 import { Hono, type Context } from 'hono'
 import { bodyLimit } from 'hono/body-limit'
@@ -12,6 +13,8 @@ import { createOpenApi } from './openapi.js'
 /** Better Auth reads the client address from this header; the server sets it, never the client. */
 export const CLIENT_IP_HEADER = 'x-aicommerce-client-ip'
 const MAX_BODY = 1024 * 1024
+// media.upload carries up to 10 MB as base64 (4/3 larger) inside JSON.
+const MAX_UPLOAD_BODY = 14 * 1024 * 1024
 const MAX_AUTH_BODY = 64 * 1024
 const LIMITS = {
   guest: { limit: 120, windowSeconds: 60 },
@@ -139,7 +142,10 @@ export function createServer(options: ServerOptions): Hono<Env> {
     headers.set('Referrer-Policy', 'no-referrer')
     headers.set('Cross-Origin-Resource-Policy', 'same-origin')
     headers.set('X-Request-Id', requestId)
-    if (c.req.path.startsWith('/api')) headers.set('Cache-Control', 'no-store')
+    // A served image keeps the long cache its route set; its URL never changes content.
+    if (c.req.path.startsWith('/api') && !(c.req.path.startsWith('/api/media/') && c.res.ok)) {
+      headers.set('Cache-Control', 'no-store')
+    }
     if (options.production) {
       headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains')
     }
@@ -226,12 +232,39 @@ export function createServer(options: ServerOptions): Hono<Env> {
     return c.json(doc)
   })
 
+  // Public: the record is read through media.file-info, so the path to data stays an action.
+  server.get('/api/media/:id/:width', async (c) => {
+    const id = c.req.param('id')
+    const width = c.req.param('width')
+    c.set('action', 'media.file-info')
+    if (!/^[1-9]\d{0,3}$/.test(width)) return failure(c, 404, 'not_found', 'Not found')
+    const app = appOf()
+    const info = await app.registry.call('media.file-info', { id }, { actor: guestActor })
+    if (!info.ok) {
+      if (info.error.code === 'handler_error') return failure(c, 500, 'handler_error', 'Failed')
+      return failure(c, 404, 'not_found', 'Not found')
+    }
+    const served = servedWidth((info.output as { width: number }).width, Number(width))
+    const data = await app.service(files).get(`${id}/${String(served)}.webp`)
+    if (!data) return failure(c, 404, 'not_found', 'Not found')
+    return c.body(data as Uint8Array<ArrayBuffer>, 200, {
+      'Content-Type': 'image/webp',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+    })
+  })
+
+  const actionBody = bodyLimit({
+    maxSize: MAX_BODY,
+    onError: (c) => failure(c, 413, 'payload_too_large', 'The body is over 1 MiB'),
+  })
+  const uploadBody = bodyLimit({
+    maxSize: MAX_UPLOAD_BODY,
+    onError: (c) => failure(c, 413, 'payload_too_large', 'The body is over 14 MiB'),
+  })
+
   server.post(
     '/api/actions/:name',
-    bodyLimit({
-      maxSize: MAX_BODY,
-      onError: (c) => failure(c, 413, 'payload_too_large', 'The body is over 1 MiB'),
-    }),
+    (c, next) => (c.req.param('name') === 'media.upload' ? uploadBody : actionBody)(c, next),
     async (c) => {
       const name = c.req.param('name')
       c.set('action', name)

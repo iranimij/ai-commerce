@@ -29,12 +29,16 @@ import {
   type MigrationSource,
 } from '@aicommerce/db'
 import { access } from '@aicommerce/module-access'
+import { createDiskFileStore, files, media, mediaMigrations } from '@aicommerce/module-media'
 import { sample, sampleMigrations } from '@aicommerce/module-sample'
 import { setup, setupMigrations } from '@aicommerce/module-setup'
 import { system } from '@aicommerce/module-system'
 
 /** Every module this server can run. */
-export const firstPartyModules = [system, access, sample, setup]
+export const firstPartyModules = [system, access, sample, setup, media]
+
+/** Where uploaded files are kept when AICOMMERCE_FILES_DIR is not set. */
+export const DEFAULT_FILES_DIR = '/var/lib/aicommerce/files'
 
 /** The modules a shop can run, and where each one's migrations are. */
 export interface Install {
@@ -44,7 +48,7 @@ export interface Install {
 
 export const firstParty: Install = {
   modules: firstPartyModules,
-  migrations: { sample: [sampleMigrations], setup: [setupMigrations] },
+  migrations: { sample: [sampleMigrations], setup: [setupMigrations], media: [mediaMigrations] },
 }
 
 export const CONFIG_FILE = 'aicommerce.config.json'
@@ -132,9 +136,11 @@ export interface AicommerceOptions {
   modules: readonly string[]
   /** Every module the shop can run. Default: the first-party modules. */
   install?: Install
+  /** Where uploaded files are kept. Default: DEFAULT_FILES_DIR. */
+  filesDir?: string
 }
 
-/** The app with every PostgreSQL-backed service. */
+/** The app with every PostgreSQL-backed service, and uploaded files on local disk. */
 export function createAicommerce(options: AicommerceOptions): App {
   const { database } = options
   const all = (options.install ?? firstParty).modules
@@ -154,6 +160,7 @@ export function createAicommerce(options: AicommerceOptions): App {
       provide(identity, 'app', options.auth.identity),
       provide(databaseService, 'app', database),
       provide(moduleState, 'app', createPgModuleState(database)),
+      provide(files, 'app', createDiskFileStore(options.filesDir ?? DEFAULT_FILES_DIR)),
     ],
     audit: createDbAuditSink(database),
     transaction: database.transaction,

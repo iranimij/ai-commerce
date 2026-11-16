@@ -26,6 +26,8 @@ const schema = databaseEnv.extend({
   AICOMMERCE_ROLE: z.enum(['all', 'web', 'worker']).default('all'),
   AICOMMERCE_MODULES: z.string().default(DEFAULT_MODULES).transform(moduleList),
   AICOMMERCE_TRUSTED_PROXIES: z.coerce.number().int().min(0).max(10).default(0),
+  /** Where uploaded files are kept. Default: /var/lib/aicommerce/files. */
+  AICOMMERCE_FILES_DIR: z.string().min(1).optional(),
   NODE_ENV: z.string().optional(),
 })
 

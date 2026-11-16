@@ -44,6 +44,7 @@ services:
       - .:/app
       - node_modules:/app/node_modules
       - pnpm_store:/pnpm-store
+      - files:/var/lib/aicommerce/files
     environment:
       DATABASE_URL: postgres://aicommerce_app:aicommerce_app@db:5432/aicommerce
       MIGRATION_DATABASE_URL: postgres://aicommerce:aicommerce@db:5432/aicommerce
@@ -201,6 +202,8 @@ volumes:
   node_modules:
   pnpm_store:
   db_data:
+  # Uploaded images, kept across restarts.
+  files:
   # In memory, so each run's shops start with an empty log.
   e2e_logs:
     driver_opts: { type: tmpfs, device: tmpfs }
