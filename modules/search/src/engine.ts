@@ -239,6 +239,12 @@ async function index(ctx: ActionContext, ids: readonly string[]): Promise<void> 
         suggest = excluded.suggest, categories = excluded.categories, facets = excluded.facets,
         prices = excluded.prices`,
   )
+  await rows(
+    ctx,
+    sql`insert into search_word (word)
+      select distinct w.lexeme from search_document d, unnest(to_tsvector('simple', d.suggest)) w
+      where d.product_id in ${anyOf([...found])} on conflict do nothing`,
+  )
 }
 
 async function remove(ctx: ActionContext, ids: readonly string[]): Promise<void> {
@@ -430,25 +436,64 @@ async function query(ctx: ActionContext, q: SearchQuery): Promise<SearchResult> 
   }
 }
 
-async function suggest(ctx: ActionContext, q: string, locale: string): Promise<Suggestions> {
-  const term = unaccent(sql`${q}`)
-  const fallback = await language(ctx)
-  // Nearest first by word similarity (the GiST index), then only those similar enough.
-  const near = await rows(
+/**
+ * A typed word at most this far from a known word is kept as typed: a prefix of two letters or
+ * more always is (word distance 1/(n+1) for n letters), a typo usually is not.
+ */
+const PREFIX = 0.34
+
+/**
+ * The query with each word that is not (the start of) a known name word replaced by the nearest
+ * one, and words with no near one left out. A typo then becomes a close match, so the
+ * nearest-first scan of a million documents stops after a few rows instead of most of the index.
+ */
+async function corrected(ctx: ActionContext, q: string): Promise<string> {
+  const words = q.match(/[\p{L}\p{M}\p{N}]+/gu)?.slice(0, 20) ?? []
+  if (words.length === 0) return ''
+  const found = await rows(
     ctx,
-    sql`select s.product_id, p.name, p.slug, p.translations from (
-        select product_id, suggest operator(public.<->>) ${term} as distance
-        from search_document where status = 'active'
-        order by suggest operator(public.<->>) ${term}, product_id limit 6) s
-      join catalog_product p on p.id = s.product_id and p.status = 'active'
-      where s.distance <= ${1 - SIMILAR}
-      order by s.distance, s.product_id`,
+    sql`select t.typed, n.word, n.distance from (
+        select i, lower(${unaccent(sql`raw`)}) as typed
+        from jsonb_array_elements_text(${JSON.stringify(words)}::jsonb) with ordinality as w(raw, i)) t
+      left join lateral (
+        select word, word operator(public.<->>) t.typed as distance from search_word
+        order by word operator(public.<->>) t.typed limit 1) n on true
+      order by t.i`,
   )
+  return found
+    .flatMap((r) => {
+      const distance = r.distance === null ? 1 : Number(r.distance)
+      if (distance <= PREFIX) return [String(r.typed)]
+      return distance <= 1 - SIMILAR ? [String(r.word)] : []
+    })
+    .join(' ')
+}
+
+async function suggest(ctx: ActionContext, q: string, locale: string): Promise<Suggestions> {
+  const fallback = await language(ctx)
+  const fixed = await corrected(ctx, q)
+  const term = sql`${fixed}`
+  // Nearest first by word similarity (the GiST index), then only those similar enough. No id
+  // tie-break inside: the scan would read every tie (thousands of "... Shirt") before stopping.
+  const near =
+    fixed === ''
+      ? []
+      : await rows(
+          ctx,
+          sql`select s.product_id, p.name, p.slug, p.translations from (
+              select product_id, suggest operator(public.<->>) ${term} as distance
+              from search_document where status = 'active'
+              order by suggest operator(public.<->>) ${term} limit 6) s
+            join catalog_product p on p.id = s.product_id and p.status = 'active'
+            where s.distance <= ${1 - SIMILAR}
+            order by s.distance, s.product_id`,
+        )
+  const typed = unaccent(sql`${q}`)
   // shortcut: compares every enabled category's names; index them if a shop has thousands.
   const categories = await rows(
     ctx,
     sql`select id, name, slug, translations from (
-        select id, name, slug, translations, public.word_similarity(${term}, ${unaccent(
+        select id, name, slug, translations, public.word_similarity(${typed}, ${unaccent(
           sql`concat_ws(' ', name, (select string_agg(value->>'name', ' ')
             from jsonb_each(coalesce(translations, '{}'::jsonb))))`,
         )}) as similarity

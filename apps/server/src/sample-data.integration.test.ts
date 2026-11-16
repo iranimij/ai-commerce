@@ -77,7 +77,8 @@ test('install-sample creates a browsable catalog', async () => {
     await call('catalog.menu', { locale: 'fa' }, guestActor),
   )
   expect(fa.items[0]?.name).toMatch(/[؀-ۿ]/)
-})
+  // 36 products, 38 variants and 36 images through actions: 4.8 s of the default 5 s on CI.
+}, 30_000)
 
 test('install-sample twice is a conflict', async () => {
   // The catalog from the test above is there.
