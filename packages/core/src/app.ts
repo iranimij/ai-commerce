@@ -5,6 +5,7 @@ import { createPipelines, type Pipelines } from './pipeline.js'
 import { createRegistry, type Registry, type RegistryOptions } from './registry.js'
 import { appInfo, type AppInfo, type AttributeDefinition } from './attributes.js'
 import { resourceActions, type ResourceDefinition } from './resource.js'
+import { createSettingsReader, settings, type SettingDefinition } from './settings.js'
 import type { ServiceDefinition, ServiceProvision } from './service.js'
 
 export interface ActionInfo {
@@ -253,16 +254,38 @@ export function createApp(options: AppOptions): App {
       moduleAttributes.set(a.resource, list)
     }
   }
+  const settingDefs = new Map<string, SettingDefinition>()
+  for (const m of ordered) {
+    for (const s of m.settings ?? []) {
+      assertOwner(m.name, 'setting', s.module)
+      const ns = s.key.split('.')[0] ?? ''
+      if (namespaceOwner.get(ns) !== m.name) {
+        throw new Error(
+          `Module "${m.name}" cannot declare setting "${s.key}": namespace "${ns}" is not declared by module "${m.name}"`,
+        )
+      }
+      if (settingDefs.has(s.key)) throw new Error(`Setting "${s.key}" is declared twice`)
+      settingDefs.set(s.key, s as SettingDefinition)
+    }
+  }
   const permissions = [
-    ...new Set([...actionOwner.keys()].flatMap((name) => registry.get(name)?.permission ?? [])),
+    ...new Set([
+      ...[...actionOwner.keys()].flatMap((name) => registry.get(name)?.permission ?? []),
+      ...[...settingDefs.values()].map((s) => s.permission),
+    ]),
   ].sort()
   const info: AppInfo = {
     resources: () => [...resources.values()],
     moduleAttributes: (resource) => [...(moduleAttributes.get(resource) ?? [])],
     permissions: () => [...permissions],
-    settings: () => [],
+    settings: () => [...settingDefs.values()],
   }
   providers.set(appInfo.name, { provider: 'core', replaced: [], implementation: info })
+  // Without a store, every setting reads as its default (unit tests, tools).
+  if (!providers.has(settings.name)) {
+    const defaults = createSettingsReader({ read: () => Promise.resolve(undefined) })
+    providers.set(settings.name, { provider: 'core', replaced: [], implementation: defaults })
+  }
 
   function inspect(kind: 'action' | 'pipeline' | 'event' | 'service', name: string): unknown {
     if (kind === 'service') {

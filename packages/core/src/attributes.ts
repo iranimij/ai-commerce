@@ -2,6 +2,7 @@ import { z } from 'zod'
 import { ActionError } from './errors.js'
 import type { PrivacyClass } from './privacy.js'
 import type { ResourceDefinition } from './resource.js'
+import type { SettingDefinition } from './settings.js'
 import { defineService } from './service.js'
 
 export type AttributeType = 'text' | 'number' | 'boolean' | 'date' | 'select' | 'multiselect'
@@ -98,10 +99,10 @@ export interface AppInfo {
   resources(): ResourceDefinition[]
   /** Attributes defined by enabled modules for a resource. */
   moduleAttributes(resource: string): AttributeDefinition[]
-  /** Sorted, unique permissions of every enabled action. */
+  /** Sorted, unique permissions of every enabled action and setting. */
   permissions(): string[]
-  /** Setting definitions; filled in by settings (Task 6). */
-  settings(): readonly unknown[]
+  /** Setting definitions of the enabled modules. */
+  settings(): SettingDefinition[]
 }
 
 export const appInfo = defineService<AppInfo>('core.app-info')

@@ -5,6 +5,8 @@ import {
   defineModule,
   definePipeline,
   defineResource,
+  defineSetting,
+  settings,
 } from '@aicommerce/core'
 import type { MigrationSource } from '@aicommerce/db'
 import { z } from 'zod'
@@ -33,6 +35,17 @@ export const note = defineResource({
  */
 export const greeting = definePipeline<{ text: string }>('sample.greeting')
 
+/** A setting a merchant can change; `sample.greet` reads it. */
+export const greetingWord = defineSetting({
+  key: 'sample.greeting-word',
+  module: 'sample',
+  label: 'Greeting word',
+  schema: z.string().min(1).max(50),
+  default: 'Hello',
+  privacy: 'public',
+  scope: 'global',
+})
+
 export const greet = defineAction({
   name: 'sample.greet',
   description: 'Greet someone by name',
@@ -41,7 +54,8 @@ export const greet = defineAction({
   permission: null,
   risk: 'read',
   handler: async (input, ctx) => {
-    const { value } = await ctx.pipelines.run(greeting, { text: `Hello, ${input.name}` })
+    const word = (await ctx.service(settings).get(greetingWord)) ?? 'Hello'
+    const { value } = await ctx.pipelines.run(greeting, { text: `${word}, ${input.name}` })
     return { greeting: value.text }
   },
 })
@@ -50,4 +64,5 @@ export const sample = defineModule({
   name: 'sample',
   actions: [greet],
   resources: [note],
+  settings: [greetingWord],
 })
