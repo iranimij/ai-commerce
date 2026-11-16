@@ -1,0 +1,124 @@
+{
+  "common": {
+    "loading": "Loading",
+    "saving": "Saving",
+    "retry": "Try again",
+    "continue": "Continue",
+    "language": "Language",
+    "theme": "Theme",
+    "themeLight": "Light",
+    "themeDark": "Dark",
+    "themeSystem": "System"
+  },
+  "setup": {
+    "title": "Set up your shop",
+    "steps": "Setup steps",
+    "stepDatabase": "Database",
+    "stepOwner": "Owner",
+    "stepShop": "Shop",
+    "stepFeatures": "Features",
+    "stepExtras": "Import and sample data",
+    "stepDone": "Done",
+    "noTokenTitle": "This page needs the setup link",
+    "noTokenBody": "Open the link printed in the terminal where AI Commerce started. To print it again, run “docker compose logs server” and look for the line that ends in /setup?token=…",
+    "finishedTitle": "Setup is finished",
+    "finishedBody": "This shop is already set up, so the setup page is locked for good."
+  },
+  "errors": {
+    "network": "The server did not answer. Check that it is running, then try again.",
+    "rateLimited": "Too many attempts. Wait a minute, then try again.",
+    "token": "The setup link is not valid any more. Open the link printed in the terminal again.",
+    "unknown": "Something went wrong. Try again."
+  },
+  "database": {
+    "title": "Database check",
+    "ok": "Connected to PostgreSQL {version}.",
+    "failedTitle": "The shop cannot reach its server or database",
+    "failedBody": "Check that the server and database containers are running (“docker compose ps”) and that DATABASE_URL points to the database. Then try again."
+  },
+  "owner": {
+    "title": "Create the owner account",
+    "intro": "The owner can do everything in this shop. Next, you will turn on two-factor authentication.",
+    "email": "Email",
+    "name": "Name",
+    "password": "Password",
+    "passwordHint": "At least 12 characters.",
+    "submit": "Create the owner",
+    "emailInvalid": "Enter a valid email address.",
+    "nameInvalid": "Enter a name of up to 100 characters.",
+    "passwordInvalid": "Use 12 to 128 characters.",
+    "exists": "An owner already exists. Reload the page to continue setup."
+  },
+  "twoFactor": {
+    "title": "Turn on two-factor authentication",
+    "intro": "Admins sign in with a code from an authenticator app as well as their password.",
+    "signIn": "Sign in as the owner to continue.",
+    "start": "Set up the authenticator app",
+    "wrongPassword": "The email or password is wrong.",
+    "scan": "Scan this code with your authenticator app, or type the key into it.",
+    "qr": "QR code for the authenticator app",
+    "secret": "Key",
+    "backupTitle": "Backup codes",
+    "backupHint": "Each code signs you in once if you lose your phone. Store them somewhere safe now: they are not shown again.",
+    "code": "Code from the app",
+    "codeHint": "Six digits.",
+    "verify": "Turn on two-factor authentication",
+    "wrongCode": "That code is not right. Check that your phone's clock is correct, then try a new code."
+  },
+  "shop": {
+    "title": "Your shop",
+    "name": "Shop name",
+    "nameInvalid": "Enter a name of 1 to 100 characters.",
+    "country": "Country",
+    "countryInvalid": "Choose a country.",
+    "currency": "Currency",
+    "currencyInvalid": "Choose a currency.",
+    "language": "Shop language",
+    "languageInvalid": "Choose a language.",
+    "choose": "Choose",
+    "aiKey": "AI provider key (optional)",
+    "aiKeyHint": "A Gemini, Claude or OpenAI key. It is stored encrypted, and you can add it later.",
+    "aiKeyInvalid": "The key is longer than 500 characters.",
+    "submit": "Save and continue"
+  },
+  "features": {
+    "title": "Features",
+    "label": "Start with",
+    "minimal": "Minimal",
+    "minimalHint": "Only what every shop needs. You can switch features on later.",
+    "full": "Everything",
+    "fullHint": "Every feature that ships with AI Commerce.",
+    "custom": "Choose features",
+    "customHint": "Tick features one by one. Anything they need is ticked for you.",
+    "alwaysOn": "Always on.",
+    "neededBy": "Needed by {module}.",
+    "signInNeeded": "To choose features one by one, sign in as the owner. Or start with a preset.",
+    "empty": "There are no features to choose from.",
+    "invalid": "A chosen feature is not available. Reload the page and choose again."
+  },
+  "modules": {
+    "system": "System",
+    "systemHint": "Settings, attributes, background jobs and switching features on and off.",
+    "access": "Admins and roles",
+    "accessHint": "Admin accounts, roles and permissions.",
+    "setup": "Setup",
+    "setupHint": "This setup page.",
+    "sample": "Sample module",
+    "sampleHint": "A small example that shows how a module is built. Safe to switch off."
+  },
+  "extras": {
+    "title": "Import and sample data",
+    "import": "Import from another shop",
+    "importHint": "Available from M3.",
+    "sample": "Add sample products",
+    "sampleHint": "Available from M1.",
+    "finish": "Finish setup",
+    "blocked": "A step is not finished yet. Reload the page to continue where you left off."
+  },
+  "done": {
+    "title": "Your shop is ready",
+    "enabled": "Switched on: {modules}.",
+    "next": "The dashboard arrives in M1. Until then, you can check your account.",
+    "me": "Check your account"
+  }
+}
