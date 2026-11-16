@@ -9,6 +9,7 @@ import {
   Card,
   Checkbox,
   EmptyState,
+  Logo,
   RadioCards,
   Select,
   Spinner,
@@ -51,6 +52,19 @@ test('Button shows busy state and blocks double submit', async () => {
   release()
   await screen.findByRole('button', { name: 'Save' })
   expect(button.getAttribute('aria-busy')).toBeNull()
+})
+
+test('Logo is named for screen readers and drops the orbit trail when small', () => {
+  const { container } = render(
+    <>
+      <Logo label="AI Commerce" size={128} />
+      <Logo label="AI Commerce" size={24} wordmark="AI Commerce" />
+    </>,
+  )
+  const [large, small] = screen.getAllByRole('img', { name: 'AI Commerce' })
+  expect(large?.querySelector('[data-part=trail]')).not.toBeNull()
+  expect(small?.querySelector('[data-part=trail]')).toBeNull()
+  expect(container.textContent).toBe('AI Commerce')
 })
 
 function Presets() {
@@ -119,6 +133,7 @@ function Everything() {
         ]}
       />
       <Spinner label="Loading" />
+      <Logo label="AI Commerce" wordmark="AI Commerce" />
       <EmptyState title="No orders yet" description="They will show here" />
       <ThemeToggle
         label="Theme"

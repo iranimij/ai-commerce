@@ -14,11 +14,13 @@
       "default": "./dist/index.js"
     },
     "./tailwind.css": "./src/tailwind.css",
-    "./tokens.css": "./src/tokens.css"
+    "./tokens.css": "./src/tokens.css",
+    "./assets/*": "./assets/*"
   },
   "files": [
     "dist",
-    "src/*.css"
+    "src/*.css",
+    "assets"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

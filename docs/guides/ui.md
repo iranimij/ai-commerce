@@ -36,9 +36,14 @@ import { Button, TextField, UiProvider } from '@aicommerce/ui'
 
 ## Changing the brand
 
-`src/brand.css` holds the palette and font. It is the one file to change. `src/tokens.css` maps it
-to roles such as background, text and accent. The current palette is logo proposal A, "Spark bag",
-until a logo is chosen.
+The logo is "Orbit a" (proposal C, chosen on 2026-11-16): a lowercase a with a dot orbiting its
+bowl.
+
+- **The mark:** the `Logo` component in apps, and `assets/logo.svg`, `logo-dark.svg`,
+  `app-icon.svg` and `favicon.svg` (exported as `@aicommerce/ui/assets/*`). The dotted orbit trail
+  shows only above 64 px.
+- **The colours:** `src/brand.css` holds the palette and font, and is the one file to change.
+  `src/tokens.css` maps it to roles such as background, text and accent.
 
 ## Components
 
@@ -52,6 +57,7 @@ until a logo is chosen.
 | `Alert`       | `info` and `success` are polite; `warning` and `danger` interrupt                                 |
 | `Card`        | A titled section with an optional footer                                                          |
 | `Stepper`     | Marks the current step with `aria-current="step"`                                                 |
+| `Logo`        | The mark, with an optional wordmark; named by its `label`                                         |
 | `Spinner`     | A status with a spoken label; still for people who reduce motion                                  |
 | `EmptyState`  | What to show when a list has nothing yet                                                          |
 | `ThemeToggle` | Light, dark or system                                                                             |

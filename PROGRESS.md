@@ -35,8 +35,9 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
     `docker compose up server`.
   - Docs: `docs/guides/`, `docs/security/threat-model-m0b.md`, `docs/decisions/log.md`.
   - Tests: 142 unit and 107 integration, including the M0b acceptance test over HTTP.
-- Logo: three proposals are waiting for Iman's choice at
-  https://claude.ai/artifact/DxTRuJwEqrEExvfWaD6aZF. I recommend A, Spark bag.
+- Logo: Iman chose C, "Orbit a" (2026-11-16), from the proposals at
+  https://claude.ai/artifact/DxTRuJwEqrEExvfWaD6aZF. It is the `Logo` component and
+  `packages/ui/assets/*.svg`.
 
 ## Next
 
@@ -90,7 +91,6 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
 - Register the `@aicommerce` npm scope.
 - Gemini API key (M1): create it in the browser and store it in a git-ignored `.env`.
 - Shopify development store for M3 testing: Iman provides it.
-- Logo choice: Iman.
 - Dependabot PRs #9 to #15 are left for Iman. #9 (Node 26 image) and #15 (`@types/node` 26)
   conflict with the Node 24 pin; #10 to #14 bump action versions and pass CI.
 - Project website at aicommerce.iranimij.net: built in M12, when the product is finished (design

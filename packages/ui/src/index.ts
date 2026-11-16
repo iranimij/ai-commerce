@@ -10,6 +10,7 @@ export { TextField, type TextFieldProps } from './components/TextField.js'
 export { Select, type SelectProps } from './components/Select.js'
 export { Checkbox, type CheckboxProps } from './components/Checkbox.js'
 export { RadioCards, type RadioCardsProps } from './components/RadioCards.js'
+export { Logo, type LogoProps } from './components/Logo.js'
 export { Spinner, type SpinnerProps } from './components/Spinner.js'
 export { ThemeToggle, type ThemeToggleProps } from './components/ThemeToggle.js'
 export {

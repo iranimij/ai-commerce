@@ -482,3 +482,10 @@ sweep; the sweep waits 30 s more. Cost if wrong: raising a timeout affects new j
 
 Sessions slide: `updateAge` 1 h keeps a session in use alive past 8 h. The spec only says "session
 expiry". An absolute cap (for example 24 h) is Iman's call.
+
+### 94 · 2026-11-16 · Iman
+
+The logo is proposal C, "Orbit a": a lowercase a with a dot orbiting its bowl. The palette is
+unchanged, since all three proposals shared it (ink #111318, paper #F4F4F1, accent #3046D9, and
+#7D8CFF on dark, in Space Grotesk). The mark is `Logo` in `@aicommerce/ui`, plus SVG files for the
+favicon and app icon.
