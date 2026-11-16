@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import type { AdminAuth } from '@aicommerce/auth'
-import { guestActor, type App } from '@aicommerce/core'
+import { guestActor, type App, type AuditEntry, type AuditSink } from '@aicommerce/core'
 import type { Database, RateLimiter } from '@aicommerce/db'
 import { getConnInfo } from '@hono/node-server/conninfo'
 import { Hono, type Context } from 'hono'
@@ -12,6 +12,7 @@ import { createOpenApi } from './openapi.js'
 /** Better Auth reads the client address from this header; the server sets it, never the client. */
 export const CLIENT_IP_HEADER = 'x-aicommerce-client-ip'
 const MAX_BODY = 1024 * 1024
+const MAX_AUTH_BODY = 64 * 1024
 const LIMITS = {
   guest: { limit: 120, windowSeconds: 60 },
   admin: { limit: 600, windowSeconds: 60 },
@@ -47,6 +48,8 @@ export interface ServerOptions {
   publicUrl: string
   /** Adds HSTS. */
   production: boolean
+  /** Records every POST to /api/auth (sign-in, 2FA changes, sign-out) by path and outcome. */
+  audit: AuditSink
   /** More origins allowed to send admin requests. */
   trustedOrigins?: string[]
   /** Reverse proxies in front of the server whose X-Forwarded-For entries are trusted. Default 0. */
@@ -56,6 +59,33 @@ export interface ServerOptions {
 }
 
 type Env = { Variables: { requestId: string; action?: string; actorType?: string } }
+
+/** The rate-limit key of an address: IPv6 by its /64, the block one subscriber usually holds. */
+export function rateLimitAddress(ip: string): string {
+  const address = ip.split('%')[0] ?? ip
+  if (!address.includes(':')) return address
+  const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address)
+  if (mapped?.[1]) return mapped[1]
+  const [head = '', tail = ''] = address.split('::')
+  const left = head ? head.split(':') : []
+  const right = address.includes('::') && tail ? tail.split(':') : []
+  const groups = address.includes('::')
+    ? [...left, ...Array<string>(Math.max(0, 8 - left.length - right.length)).fill('0'), ...right]
+    : left
+  return `${groups
+    .slice(0, 4)
+    .map((g) => parseInt(g, 16).toString(16))
+    .join(':')}::/64`
+}
+
+function outcomeOf(status: number): AuditEntry['outcome'] {
+  if (status < 400) return 'ok'
+  if (status === 400 || status === 422) return 'invalid_input'
+  if (status === 401 || status === 403 || status === 429) return 'forbidden'
+  if (status === 404) return 'not_found'
+  if (status === 409) return 'conflict'
+  return 'handler_error'
+}
 
 const failure = (c: Context, status: ContentfulStatusCode, code: string, message: string) =>
   c.json({ ok: false, error: { code, message } }, status)
@@ -137,11 +167,39 @@ export function createServer(options: ServerOptions): Hono<Env> {
     }
   })
 
-  server.on(['GET', 'POST'], '/api/auth/*', (c) => {
-    const headers = new Headers(c.req.raw.headers)
-    headers.set(CLIENT_IP_HEADER, clientIp(c))
-    return auth.handler(new Request(c.req.raw, { headers }))
-  })
+  server.on(
+    ['GET', 'POST'],
+    '/api/auth/*',
+    bodyLimit({
+      maxSize: MAX_AUTH_BODY,
+      onError: (c) => failure(c, 413, 'payload_too_large', 'The body is over 64 KiB'),
+    }),
+    async (c) => {
+      const ip = clientIp(c)
+      const headers = new Headers(c.req.raw.headers)
+      headers.set(CLIENT_IP_HEADER, ip)
+      if (c.req.method !== 'POST') return auth.handler(new Request(c.req.raw, { headers }))
+      // Read here, so the body limit applies before Better Auth parses anything.
+      const body = await c.req.arrayBuffer()
+      const started = performance.now()
+      const session = await auth.session(c.req.raw.headers)
+      const response = await auth.handler(new Request(c.req.url, { method: 'POST', headers, body }))
+      try {
+        await options.audit.write({
+          actorType: session?.actor.type ?? 'guest',
+          actorId: session?.actor.id ?? null,
+          onBehalfOf: null,
+          action: `auth.${c.req.path.slice('/api/auth/'.length).replaceAll('/', '.')}`,
+          input: { ip },
+          outcome: outcomeOf(response.status),
+          durationMs: Math.round(performance.now() - started),
+        })
+      } catch (error) {
+        console.error(`Audit of ${c.req.path} failed`, error)
+      }
+      return response
+    },
+  )
 
   server.get('/api/me', async (c) => {
     const session = await auth.session(c.req.raw.headers)
@@ -176,7 +234,7 @@ export function createServer(options: ServerOptions): Hono<Env> {
         return failure(c, 403, 'forbidden', 'Cross-site request rejected')
       }
       const limited = await rateLimiter.hit(
-        session ? `api:admin:${actor.id ?? ''}` : `api:ip:${clientIp(c)}`,
+        session ? `api:admin:${actor.id ?? ''}` : `api:ip:${rateLimitAddress(clientIp(c))}`,
         session ? LIMITS.admin : LIMITS.guest,
       )
       if (!limited.allowed) {

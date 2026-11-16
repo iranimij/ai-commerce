@@ -24,7 +24,8 @@ Example: `note` in [`modules/sample/src/index.ts`](../../modules/sample/src/inde
 - `update` changes only the fields it is given.
 - Every write records a revision (before and after) in the same transaction. Revisions cannot be
   changed or deleted, not even by the app's database role.
-- `restore` writes a revision's snapshot as a new version; a deleted record comes back with its id.
+- `restore` writes a revision's snapshot as a new version. Send the `version` you read, as for
+  `update`; leave it out to bring back a deleted record, which keeps its id.
 - `list` pages by an opaque cursor and filters by equality on scalar fields.
 - The table is `<module>_<name>` by default. Write its migration yourself: `id uuid`,
   `version int`, `created_at`/`updated_at timestamptz(3)`, `attributes jsonb`, then the fields in

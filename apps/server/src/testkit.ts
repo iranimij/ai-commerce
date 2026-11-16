@@ -1,6 +1,6 @@
 // Test helpers: a real server on a fresh schema, and signed-in admins. Not part of the build.
 import { createAdminAuth } from '@aicommerce/auth'
-import { createRateLimiter, runMigrations } from '@aicommerce/db'
+import { createDbAuditSink, createRateLimiter, runMigrations } from '@aicommerce/db'
 import { createTestDb } from '@aicommerce/db/testing'
 import * as OTPAuth from 'otpauth'
 import { createServer } from './server.js'
@@ -37,6 +37,7 @@ export async function createTestServer() {
     rateLimiter: createRateLimiter(database),
     publicUrl: BASE,
     production: false,
+    audit: createDbAuditSink(database),
     trustedProxies: 1,
     log: (line) => logs.push(JSON.stringify(line)),
   })

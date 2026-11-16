@@ -142,6 +142,7 @@ test('/readyz is 503 when the database is down', async () => {
   const down = createServer({
     app: t.app,
     auth: t.auth,
+    audit: { write: () => Promise.resolve() },
     database: closed,
     rateLimiter: createRateLimiter(database),
     publicUrl: BASE,
@@ -180,4 +181,42 @@ test('a forged client address header cannot reach Better Auth', async () => {
   expect(response.status).toBe(401)
   const keys = await database.client`select key from rate_limit where key like 'auth:%1.2.3.4%'`
   expect(keys).toHaveLength(0)
+})
+
+test('an auth request over 64 KiB is 413 before Better Auth reads it', async () => {
+  const response = await post('/api/auth/sign-in/email', {
+    email: 'nobody@example.com',
+    password: 'x'.repeat(70 * 1024),
+  })
+  expect(response.status).toBe(413)
+})
+
+test('guest addresses in one IPv6 /64 share a rate limit', async () => {
+  const second = new Date().getUTCSeconds()
+  if (second >= 50) await new Promise((resolve) => setTimeout(resolve, (61 - second) * 1000))
+  for (let i = 1; i <= 120; i++) {
+    const ip = `2001:db8:77:1::${i.toString(16)}`
+    expect((await action('sample.greet', { name: 'Ada' }, { ip })).status).toBe(200)
+  }
+  const limited = await action('sample.greet', { name: 'Ada' }, { ip: '2001:db8:77:1:ffff::1' })
+  expect(limited.status).toBe(429)
+}, 60_000)
+
+test('auth requests are audited by path and outcome, never with the body', async () => {
+  const ip = nextIp()
+  await post(
+    '/api/auth/sign-in/email',
+    { email: 'nobody@example.com', password: 'a-wrong-password-1234' },
+    { ip },
+  )
+  const [failed] = await database.client`select * from audit_log
+    where action = 'auth.sign-in.email' order by id desc limit 1`
+  expect(failed).toMatchObject({ actor_type: 'guest', outcome: 'forbidden', input: { ip } })
+  expect(JSON.stringify(failed)).not.toContain('a-wrong-password')
+
+  const admin = await signedIn([])
+  await post('/api/auth/sign-out', {}, { cookie: admin.cookie })
+  const [out] = await database.client`select * from audit_log
+    where action = 'auth.sign-out' order by id desc limit 1`
+  expect(out).toMatchObject({ actor_type: 'admin', actor_id: admin.id, outcome: 'ok' })
 })

@@ -28,9 +28,11 @@ is required) and `/api/auth/*`.
 
 ## Rules that bite
 
-- JSON only (415 otherwise), at most 1 MiB (413 otherwise).
+- JSON only (415 otherwise), at most 1 MiB (413 otherwise); `/api/auth/*` at most 64 KiB.
+- Every POST to `/api/auth/*` (sign-in, 2FA changes, sign-out) writes an audit row
+  `auth.<path>` with the address and outcome, never the body.
 - A request with an admin session must send an `Origin` matching `AICOMMERCE_PUBLIC_URL`, or it is
   rejected with 403 before the action runs.
-- Limits: 120 calls a minute per address for guests, 600 per admin. Behind a reverse proxy, set
+- Limits: 120 calls a minute per address for guests (an IPv6 /64 counts as one), 600 per admin. Behind a reverse proxy, set
   `AICOMMERCE_TRUSTED_PROXIES` to the number of proxies, or every guest shares one address.
 - Logs are one JSON line per request without bodies or headers; use `X-Request-Id` to find one.

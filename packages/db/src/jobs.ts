@@ -128,6 +128,8 @@ export function createWorker(options: WorkerOptions): Worker {
       call: (name, input) => app.registry.call(name, input, { actor: systemActor }),
     }
     let timer: NodeJS.Timeout | undefined
+    // The stored timeout, which the sweep also uses: the definition may have changed since enqueue.
+    const timeoutSeconds = Number(row.timeout_seconds)
     try {
       if (!def) throw new Error(`Job "${String(row.name)}" is not enabled`)
       const payload: unknown = def.payload.parse(row.payload)
@@ -135,8 +137,8 @@ export function createWorker(options: WorkerOptions): Worker {
         def.handler(payload as never, ctx),
         new Promise((_, reject) => {
           timer = setTimeout(() => {
-            reject(new Error(`Timed out after ${String(def.timeoutSeconds)} s`))
-          }, def.timeoutSeconds * 1000)
+            reject(new Error(`Timed out after ${String(timeoutSeconds)} s`))
+          }, timeoutSeconds * 1000)
         }),
       ])
       await run(sql`update job set status = 'done', done_at = now(), updated_at = now(),
@@ -156,13 +158,14 @@ export function createWorker(options: WorkerOptions): Worker {
   }
 
   const runOnce = async (): Promise<number> => {
-    // A worker that died mid-job leaves it running; give it back after its timeout.
+    // A worker that died mid-job leaves it running; give it back 30 s after its timeout, so a live
+    // worker's own timer always fires first.
     await run(sql`update job set
         status = case when attempts >= max_attempts then 'failed' else 'pending' end,
         last_error = 'Timed out: the worker running it stopped', locked_at = null,
         locked_by = null, updated_at = now()
       where status = 'running'
-        and locked_at < now() - timeout_seconds * interval '1 second'`)
+        and locked_at < now() - (timeout_seconds + 30) * interval '1 second'`)
     const names = app.jobs().map((j) => j.name)
     if (names.length === 0) return 0
     const claimed = await run(sql`update job set status = 'running', attempts = attempts + 1,
@@ -177,7 +180,7 @@ export function createWorker(options: WorkerOptions): Worker {
         order by run_at
         limit ${concurrency}
         for update skip locked)
-      returning id, name, payload, attempts`)
+      returning id, name, payload, attempts, timeout_seconds`)
     await Promise.all(claimed.map(execute))
     return claimed.length
   }

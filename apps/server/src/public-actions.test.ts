@@ -39,9 +39,11 @@ test('each public action answers bad input with 400, never 500', async () => {
     database: { client: () => Promise.resolve([]) } as unknown as Database,
     rateLimiter: {
       hit: () => Promise.resolve({ allowed: true, retryAfterSeconds: 0 }),
+      prune: () => Promise.resolve(),
     } satisfies RateLimiter,
     publicUrl: 'http://localhost:3000',
     production: false,
+    audit: { write: () => Promise.resolve() },
     log: () => undefined,
   })
   const send = (name: string, body: string) =>

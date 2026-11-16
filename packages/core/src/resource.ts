@@ -119,9 +119,11 @@ export interface ResourceStore {
     limit: number,
   ): Promise<Page<Revision>>
   revision(resource: ResourceDefinition, revisionId: string): Promise<Revision | null>
+  /** `expected` is the version read; it must be absent when the record was deleted. */
   restore(
     resource: ResourceDefinition,
     revision: Revision,
+    expected: number | undefined,
     meta: WriteMeta,
   ): Promise<ResourceRecord>
 }
@@ -376,12 +378,22 @@ export function resourceActions(resource: ResourceDefinition): ActionDefinition[
       `Restore a ${label.singular.toLowerCase()} to how it was after a change`,
       'write',
       permissions.write,
-      z.object({ revisionId: z.string().regex(/^\d{1,19}$/) }),
+      z.object({
+        revisionId: z.string().regex(/^\d{1,19}$/),
+        /** The version you read; leave it out to bring back a deleted record. */
+        version: z.number().int().positive().optional(),
+      }),
       record,
       async (input, ctx) => {
         const revision = await store(ctx).revision(resource, input.revisionId as string)
         if (!revision) throw new ActionError('not_found', 'Revision not found')
-        return show(await defsOf(ctx), await store(ctx).restore(resource, revision, meta(ctx)))
+        const restored = await store(ctx).restore(
+          resource,
+          revision,
+          input.version as number | undefined,
+          meta(ctx),
+        )
+        return show(await defsOf(ctx), restored)
       },
     ),
   ]

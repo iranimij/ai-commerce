@@ -182,3 +182,25 @@ test('revision rows cannot be updated or deleted', async () => {
   await expect(database.client`update revision set action = 'x'`).rejects.toThrow('append-only')
   await expect(database.client`delete from revision`).rejects.toThrow('append-only')
 })
+
+test('restore takes the version you read; a stale one is a conflict', async () => {
+  const created = await create('First')
+  output(await call('note.update', { id: created.id, version: 1, values: { title: 'Second' } }))
+  const history = output<{ items: { id: string; action: string }[] }>(
+    await call('note.history', { id: created.id }),
+  )
+  const first = history.items.find((r) => r.action === 'note.create')?.id ?? ''
+  expect(await call('note.restore', { revisionId: first, version: 1 })).toMatchObject({
+    ok: false,
+    error: { code: 'conflict' },
+  })
+  expect(await call('note.restore', { revisionId: first })).toMatchObject({
+    ok: false,
+    error: { code: 'conflict' },
+  })
+  expect(output(await call('note.get', { id: created.id }))).toMatchObject({ title: 'Second' })
+  expect(output(await call('note.restore', { revisionId: first, version: 2 }))).toMatchObject({
+    title: 'First',
+    version: 3,
+  })
+})
