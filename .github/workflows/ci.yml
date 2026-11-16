@@ -114,8 +114,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Build the production image
         run: docker build -f docker/Dockerfile -t ai-commerce:test .
+      # As root: the checkout belongs to the runner's user, not to the container's node user.
       - name: Install dependencies
-        run: ./dev pnpm install --frozen-lockfile
+        run: docker compose run --rm -T --user root app pnpm install --frozen-lockfile
       - name: End-to-end tests
         run: ./dev e2e
       - name: Keep the traces
