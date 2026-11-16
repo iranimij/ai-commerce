@@ -1,0 +1,6 @@
+{
+  "name": "aicommerce-module-ribbons",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": "./index.js"
+}

@@ -12,7 +12,7 @@ import { readEnv } from './env.js'
 import { CLIENT_IP_HEADER, createServer } from './server.js'
 import { issueSetupToken } from '@aicommerce/module-setup'
 import { createAppHost } from './app-host.js'
-import { migrationSources } from './wiring.js'
+import { loadInstall, migrationSources } from './wiring.js'
 
 const env = readEnv()
 const production = env.NODE_ENV === 'production'
@@ -38,7 +38,10 @@ const auth = createAdminAuth({
   production,
   ipHeader: CLIENT_IP_HEADER,
 })
+// Third-party modules listed in aicommerce.config.json, next to the first-party ones.
+const install = await loadInstall(process.cwd())
 const host = await createAppHost({
+  install,
   database,
   owner,
   ...(appRole !== ownerRole && { appRole }),

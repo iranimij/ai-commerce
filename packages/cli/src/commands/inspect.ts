@@ -7,7 +7,7 @@ const KINDS = ['action', 'pipeline', 'event', 'service'] as const
 export async function inspect(argv: string[], io: Io): Promise<number> {
   const { values, positionals } = parse(argv, { json: { type: 'boolean' } })
   const [kind, name, extra] = positionals
-  const all = io.modules
+  const all = io.install.modules
   const app = createApp({
     modules: [...all],
     enabled: resolveModules(

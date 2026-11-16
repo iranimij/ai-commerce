@@ -13,9 +13,10 @@ export async function installedModules(database: Database, io: Io): Promise<stri
     const { code, cause } = error as { code?: string; cause?: { code?: string } }
     if ((code ?? cause?.code) !== '42P01') throw error
   }
-  const known = new Set(io.modules.map((m) => m.name))
+  const { modules } = io.install
+  const known = new Set(modules.map((m) => m.name))
   const wanted = (stored ?? moduleList(io.env.AICOMMERCE_MODULES ?? DEFAULT_MODULES)).filter((m) =>
     known.has(m),
   )
-  return resolveModules(io.modules, wanted).enabled
+  return resolveModules(modules, wanted).enabled
 }

@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process'
 import { parseArgs, type ParseArgsConfig } from 'node:util'
-import type { ModuleDefinition } from '@aicommerce/core'
+import type { Install } from '@aicommerce/server'
 
 export interface Io {
   cwd: string
@@ -9,8 +9,8 @@ export interface Io {
   err: (line: string) => void
   /** A yes or no question; false when nobody can answer (no terminal). */
   ask: (question: string) => Promise<boolean>
-  /** Every module this install has. */
-  modules: readonly ModuleDefinition[]
+  /** Every module the shop can run: first-party plus aicommerce.config.json. */
+  install: Install
 }
 
 /** Wrong usage: exit code 2 and the usage text. */
@@ -26,6 +26,21 @@ export function parse<O extends Options>(argv: string[], options: O) {
   } catch (error) {
     throw new UsageError((error as Error).message)
   }
+}
+
+/** Runs a command in `cwd`; rejects with its output when it fails. */
+export function exec(command: string, args: string[], cwd: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const child = spawn(command, args, { cwd, stdio: ['ignore', 'pipe', 'pipe'] })
+    let output = ''
+    child.stdout.on('data', (chunk: Buffer) => (output += chunk.toString()))
+    child.stderr.on('data', (chunk: Buffer) => (output += chunk.toString()))
+    child.on('error', reject)
+    child.on('close', (code) => {
+      if (code === 0) resolve(output)
+      else reject(new Error(`${command} ${args.join(' ')} failed:\n${output.trim()}`))
+    })
+  })
 }
 
 /**
