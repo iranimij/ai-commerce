@@ -389,6 +389,8 @@ Task 8: the TOTP issuer stays "AI Commerce". Better Auth form-encodes it in the 
 real authenticator app and check the name. Cost if wrong: the app shows "AI+Commerce"; fix by
 rewriting `totpURI` in an after-hook.
 
+Checked on 2026-11-16: Iman scanned the QR code with an authenticator app, which shows "AI Commerce". No change needed.
+
 ### 77 · 2026-11-16 · Claude (implementer)
 
 Task 8: `identity.createAdmin` writes `admin_user` and `admin_account` itself on
