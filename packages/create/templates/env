@@ -3,6 +3,8 @@
 
 # The port on this machine, and the address people use to reach the shop. Change both together;
 # behind a TLS proxy, set AICOMMERCE_PUBLIC_URL to the https address.
+# It is the admin's address: the admin holds the shop's port and passes /api on to the server,
+# so the setup link the shop prints opens the setup page.
 AICOMMERCE_PORT={{PORT}}
 AICOMMERCE_PUBLIC_URL=http://localhost:{{PORT}}
 

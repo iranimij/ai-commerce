@@ -53,9 +53,6 @@ function takeToken(): string | null {
   } catch {
     // Keep going with the token from the URL.
   }
-  // Out of the address bar, history and screenshots.
-  url.searchParams.delete('token')
-  window.history.replaceState(null, '', url)
   return fromUrl
 }
 
@@ -104,7 +101,15 @@ export function SetupFlow({ locale, theme: initialTheme }: { locale: string; the
 
   useEffect(() => {
     setToken(takeToken())
-  }, [])
+    // Out of the address bar, history and screenshots. Through the router: a plain
+    // history.replaceState here runs before Next.js syncs the history, and the next
+    // router.refresh() (a language switch) would put the token back.
+    const url = new URL(window.location.href)
+    if (url.searchParams.has('token')) {
+      url.searchParams.delete('token')
+      router.replace(url.pathname + url.search, { scroll: false })
+    }
+  }, [router])
   useEffect(() => {
     if (token !== undefined) void load()
   }, [token, load])

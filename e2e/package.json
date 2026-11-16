@@ -1,0 +1,16 @@
+{
+  "name": "@aicommerce/e2e",
+  "version": "0.0.0",
+  "description": "End-to-end tests of the production image in a browser: run them with ./dev e2e",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.1",
+    "axe-core": "4.14.0",
+    "otpauth": "9.6.0"
+  }
+}

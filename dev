@@ -1,12 +1,25 @@
 #!/bin/sh
 # Run any command inside the app container: ./dev pnpm test
 # ./dev ai-commerce <command> runs the CLI (build it first with ./dev pnpm build).
+# ./dev e2e [playwright options] runs the end-to-end tests against the image ai-commerce:test
+# (docker build -f docker/Dockerfile -t ai-commerce:test .).
+if [ -t 0 ]; then tty=''; else tty='-T'; fi
+if [ "$1" = "e2e" ]; then
+  shift
+  # Fresh shops and database on every run: remove what an earlier run left, and this run's after.
+  shops=$(docker compose --profile e2e config --services | grep '^e2e-')
+  # shellcheck disable=SC2086
+  docker compose --profile e2e rm -fsv $shops
+  # shellcheck disable=SC2086
+  docker compose --profile e2e run --rm $tty playwright npx playwright test "$@"
+  status=$?
+  # shellcheck disable=SC2086
+  docker compose --profile e2e rm -fsv $shops
+  exit $status
+fi
 if [ "$1" = "ai-commerce" ]; then
   shift
   set -- node packages/cli/dist/bin.js "$@"
 fi
-if [ -t 0 ]; then
-  exec docker compose run --rm app "$@"
-else
-  exec docker compose run --rm -T app "$@"
-fi
+# shellcheck disable=SC2086
+exec docker compose run --rm $tty app "$@"
