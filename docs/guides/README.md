@@ -15,6 +15,7 @@ One page per contract. Each example is real code in `modules/sample`, so CI runs
 | [Media](media.md)                         | Image uploads, re-encoded to WebP and served            |
 | [Catalog](catalog.md)                     | Products, variants, categories and the public views     |
 | [Search](search.md)                       | Full-text search, filters, sorting and suggestions      |
+| [SEO](seo.md)                             | Clean URLs, redirects, meta, structured data, sitemap   |
 | [Settings](settings.md)                   | Typed configuration, with encrypted secrets             |
 | [Jobs](jobs.md)                           | Background work with retries                            |
 | [Admin sign-in and roles](admin-auth.md)  | Sessions, mandatory 2FA, roles and escalation rules     |

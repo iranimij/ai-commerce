@@ -10,5 +10,8 @@
   "catalog.category-view",
   "catalog.menu",
   "search.query",
-  "search.suggest"
+  "search.suggest",
+  "seo.resolve",
+  "seo.meta",
+  "seo.sitemap"
 ]

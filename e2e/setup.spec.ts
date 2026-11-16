@@ -6,7 +6,7 @@ import { expect, test } from './support/shops'
 const en = messages('en')
 const PRESETS = {
   minimal: ['access', 'setup', 'system'],
-  full: ['access', 'catalog', 'media', 'sample', 'search', 'setup', 'system'],
+  full: ['access', 'catalog', 'media', 'sample', 'search', 'seo', 'setup', 'system'],
 }
 
 for (const preset of ['minimal', 'full'] as const) {

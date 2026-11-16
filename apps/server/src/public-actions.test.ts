@@ -30,6 +30,8 @@ test('the public actions are exactly the reviewed list', () => {
   // categories and variants, and public attributes.
   // search.query and search.suggest find only active products and visible categories, and filter
   // and count only public attributes.
+  // seo.resolve, meta and sitemap give only the live paths of active products and enabled
+  // categories (checked against the record) and redirects, which point only to paths.
   expect(actual).toEqual([...reviewed].sort())
 })
 

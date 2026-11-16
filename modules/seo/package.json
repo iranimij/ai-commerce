@@ -1,0 +1,35 @@
+{
+  "name": "@aicommerce/module-seo",
+  "version": "0.0.0",
+  "description": "Clean URLs, redirects on rename, meta tags, structured data and the sitemap",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@aicommerce/core": "workspace:*",
+    "@aicommerce/db": "workspace:*",
+    "@aicommerce/module-catalog": "workspace:*",
+    "@aicommerce/module-setup": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@aicommerce/module-media": "workspace:*"
+  }
+}
