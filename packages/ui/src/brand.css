@@ -1,0 +1,13 @@
+/*
+ * The brand palette: logo proposal A, "Spark bag", until a logo is chosen.
+ * This is the one file to change for a new brand; tokens.css maps it to roles.
+ */
+:root {
+  --brand-ink: #111318;
+  --brand-paper: #f4f4f1;
+  --brand-white: #ffffff;
+  --brand-slate: #565a66;
+  --brand-accent: #3046d9;
+  --brand-accent-on-dark: #7d8cff;
+  --brand-font: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+}
