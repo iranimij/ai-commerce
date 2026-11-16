@@ -1,7 +1,7 @@
 import { describe, expect, test } from 'vitest'
 import { z } from 'zod'
 import { classify } from './privacy.js'
-import { defineResource, resourceActions } from './resource.js'
+import { defineResource, isStructured, resourceActions } from './resource.js'
 
 const fields = z.strictObject({
   title: classify(z.string(), 'public'),
@@ -57,4 +57,23 @@ describe('defineResource', () => {
     const pub = actions.filter((a) => a.permission === null).map((a) => a.name)
     expect(pub.sort()).toEqual(['note.get', 'note.history', 'note.list'])
   })
+})
+
+test('structured fields are not filters', () => {
+  const shaped = z.strictObject({
+    title: z.string(),
+    tags: z.array(z.string()).default([]),
+    size: z.strictObject({ w: z.number(), h: z.number() }).optional(),
+    names: z.record(z.string(), z.string()).optional(),
+  })
+  expect(
+    Object.entries(shaped.shape)
+      .filter(([, s]) => isStructured(s))
+      .map(([k]) => k),
+  ).toEqual(['tags', 'size', 'names'])
+  const list = resourceActions(defineResource({ ...base, fields: shaped })).find(
+    (a) => a.name === 'note.list',
+  )
+  const filter = list?.input.shape.filter as z.ZodOptional<z.ZodObject>
+  expect(Object.keys(filter.unwrap().shape)).toEqual(['title'])
 })

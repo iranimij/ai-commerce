@@ -187,3 +187,36 @@ test('attribute.list shows module and merchant attributes', async () => {
     ['mood', 'merchant'],
   ])
 })
+
+test('swatches must name options', async () => {
+  const bad = await attribute('shade', {
+    type: 'select',
+    options: ['red', 'blue'],
+    swatches: { green: { color: '#00ff00' } },
+  })
+  expect(bad).toMatchObject({ ok: false, error: { code: 'invalid_input' } })
+  expect(!bad.ok && bad.error.issues?.[0]?.path).toEqual(['swatches'])
+  const onText = await attribute('motto', { swatches: { red: { color: '#ff0000' } } })
+  expect(onText).toMatchObject({ ok: false, error: { code: 'invalid_input' } })
+  expect(!onText.ok && onText.error.issues?.[0]?.path).toEqual(['swatches'])
+  const badColor = await attribute('tone', {
+    type: 'select',
+    options: ['red'],
+    swatches: { red: { color: 'red' } },
+  })
+  expect(badColor).toMatchObject({ ok: false, error: { code: 'invalid_input' } })
+})
+
+test('swatches round-trip through attribute.create and attribute.list', async () => {
+  const file = '7b0c4a52-2d43-4c7e-9a43-5d2f0a1e6b11'
+  const swatches = { red: { color: '#FF0000' }, blue: { file } }
+  const created = output(
+    await attribute('shade', { type: 'multiselect', options: ['red', 'blue', 'grey'], swatches }),
+  )
+  expect(created).toMatchObject({ swatches })
+  const { items } = output<{ items: Record<string, unknown>[] }>(
+    await call('attribute.list', { resource: 'note' }),
+  )
+  expect(items.find((a) => a.code === 'shade')).toMatchObject({ swatches })
+  expect(items.find((a) => a.code === 'colour')).not.toHaveProperty('swatches')
+})

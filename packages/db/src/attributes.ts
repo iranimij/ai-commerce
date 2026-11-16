@@ -1,4 +1,9 @@
-import { ActionError, type AttributeDefinition, type AttributeStore } from '@aicommerce/core'
+import {
+  ActionError,
+  type AttributeDefinition,
+  type AttributeStore,
+  type Swatch,
+} from '@aicommerce/core'
 import { sql } from 'drizzle-orm'
 import type { Database } from './client.js'
 
@@ -17,6 +22,7 @@ export function createPgAttributeStore(database: Database): AttributeStore {
         label: String(row.label),
         type: row.type as AttributeDefinition['type'],
         ...(row.options ? { options: row.options as string[] } : {}),
+        ...(row.swatches ? { swatches: row.swatches as Record<string, Swatch> } : {}),
         required: row.required === true,
         privacy: row.privacy as AttributeDefinition['privacy'],
         source: 'merchant',
@@ -24,9 +30,10 @@ export function createPgAttributeStore(database: Database): AttributeStore {
     },
     async create(def) {
       const rows = await run(sql`insert into attribute
-          (resource, code, label, type, options, required, privacy)
+          (resource, code, label, type, options, swatches, required, privacy)
         values (${def.resource}, ${def.code}, ${def.label}, ${def.type},
-          ${def.options ? sql`${JSON.stringify(def.options)}::jsonb` : null}, ${def.required}, ${def.privacy})
+          ${def.options ? sql`${JSON.stringify(def.options)}::jsonb` : null},
+          ${def.swatches ? sql`${JSON.stringify(def.swatches)}::jsonb` : null}, ${def.required}, ${def.privacy})
         on conflict do nothing returning code`)
       if (rows.length === 0) {
         throw new ActionError('conflict', `Attribute "${def.code}" already exists`)

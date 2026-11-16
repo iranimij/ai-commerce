@@ -25,6 +25,10 @@ defineModule({
 
 Types: `text`, `number`, `boolean`, `date` (`YYYY-MM-DD`), `select` and `multiselect`.
 
+A `select` or `multiselect` attribute may give `swatches`, how each option looks: a colour or a
+media file id, for example `swatches: { red: { color: '#ff0000' }, denim: { file: '<uuid>' } }`.
+`attribute.list` returns them.
+
 ## Rules that bite
 
 - An unknown code or a bad value is `invalid_input`, with the issue path `['attributes', code]`.
@@ -34,3 +38,6 @@ Types: `text`, `number`, `boolean`, `date` (`YYYY-MM-DD`), `select` and `multise
 - Module attributes cannot be deleted by a merchant. Deleting a merchant attribute keeps the stored
   values hidden; recreating it with the same code and type shows them again.
 - A module may only add attributes to its own resources or those of modules it depends on.
+- Every swatch key must be one of `options`, and only select types take swatches; otherwise the
+  result is `invalid_input` with the path `['swatches']`. A `file` is not checked against the media
+  library: a reader must skip a swatch whose file is gone.

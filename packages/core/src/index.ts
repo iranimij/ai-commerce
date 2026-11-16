@@ -37,6 +37,7 @@ export {
 } from './privacy.js'
 export {
   defineResource,
+  isStructured,
   resourceActions,
   resourceStore,
   type ListQuery,
@@ -63,6 +64,7 @@ export {
   type AttributeInput,
   type AttributeStore,
   type AttributeType,
+  type Swatch,
 } from './attributes.js'
 export {
   createSettingsReader,

@@ -133,6 +133,7 @@ export const resourceStore = defineService<ResourceStore>('core.resource-store')
 const RESOURCE_NAME = /^[a-z][a-z0-9-]*$/
 const SYSTEM_FIELDS = new Set(['id', 'version', 'createdAt', 'updatedAt', 'attributes'])
 const SCALARS = new Set(['string', 'number', 'boolean', 'enum'])
+const STRUCTURED = new Set(['array', 'object', 'record'])
 
 export function defineResource<F extends z.ZodObject>(
   def: ResourceInput<F>,
@@ -166,6 +167,11 @@ function unwrap(schema: unknown): unknown {
   let current = schema
   while (WRAPPERS.has(defOf(current).type)) current = defOf(current).innerType
   return current
+}
+
+/** An array, object or record field, stored as `jsonb` and replaced as a whole on update. */
+export function isStructured(schema: unknown): boolean {
+  return STRUCTURED.has(defOf(unwrap(schema)).type)
 }
 
 /** Every field optional and without its default, so an update only writes what it was given. */
