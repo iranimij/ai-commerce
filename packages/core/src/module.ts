@@ -1,6 +1,7 @@
 import type { ActionContext, ActionDefinition } from './action.js'
 import type { Subscriber } from './events.js'
 import type { Step } from './pipeline.js'
+import type { ResourceDefinition } from './resource.js'
 import type { ServiceProvision } from './service.js'
 
 /**
@@ -36,6 +37,8 @@ export interface ModuleDefinition {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   steps?: Step<any>[]
   wraps?: ActionWrap[]
+  /** Each resource gets seven actions, and its name becomes a namespace of this module. */
+  resources?: ResourceDefinition[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   provides?: ServiceProvision<any>[]
 }

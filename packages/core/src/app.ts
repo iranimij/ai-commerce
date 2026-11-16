@@ -3,6 +3,7 @@ import { createEventBus, type EventBus, type EventBusOptions } from './events.js
 import type { ModuleDefinition } from './module.js'
 import { createPipelines, type Pipelines } from './pipeline.js'
 import { createRegistry, type Registry, type RegistryOptions } from './registry.js'
+import { resourceActions } from './resource.js'
 import type { ServiceDefinition, ServiceProvision } from './service.js'
 
 export interface ActionInfo {
@@ -113,7 +114,7 @@ function dependencyClosure(ordered: ModuleDefinition[]): Map<string, Set<string>
 function claimNamespaces(ordered: ModuleDefinition[]): Map<string, string> {
   const owners = new Map<string, string>()
   for (const m of ordered) {
-    for (const ns of m.namespaces ?? [m.name]) {
+    for (const ns of [...(m.namespaces ?? [m.name]), ...(m.resources ?? []).map((r) => r.name)]) {
       const other = owners.get(ns)
       if (other !== undefined && other !== m.name) {
         throw new Error(`Namespace "${ns}" is claimed by modules "${other}" and "${m.name}"`)
@@ -192,7 +193,9 @@ export function createApp(options: AppOptions): App {
   const actionOwner = new Map<string, string>()
 
   for (const m of ordered) {
-    for (const action of m.actions ?? []) {
+    for (const r of m.resources ?? []) assertOwner(m.name, 'resource', r.module)
+    const generated = (m.resources ?? []).flatMap(resourceActions)
+    for (const action of [...(m.actions ?? []), ...generated]) {
       const ns = action.name.split('.')[0] ?? ''
       if (namespaceOwner.get(ns) !== m.name) {
         throw new Error(
