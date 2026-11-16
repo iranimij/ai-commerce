@@ -112,7 +112,8 @@ test('the sixth failed sign-in within a minute is refused with 429', async () =>
   for (let i = 0; i < 6; i++) statuses.push((await c.signIn(email, 'wrong password!!')).status)
   expect(statuses).toEqual([401, 401, 401, 401, 401, 429])
   expect((await c.signIn(email)).status).toBe(429)
-})
+  // Up to 6 s of waiting for a fresh window above.
+}, 15_000)
 
 test('an admin without 2FA has no permissions', async () => {
   const { email } = await admin(['owner'])
