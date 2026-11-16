@@ -35,15 +35,30 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
     `docker compose up server`.
   - Docs: `docs/guides/`, `docs/security/threat-model-m0b.md`, `docs/decisions/log.md`.
   - Tests: 142 unit and 107 integration, including the M0b acceptance test over HTTP.
-- Logo: Iman chose C, "Orbit a" (2026-11-16), from the proposals at
-  https://claude.ai/artifact/DxTRuJwEqrEExvfWaD6aZF. It is the `Logo` component and
+- **M0c is done** (PRs #38 to #58). Tasks 8, 9 and 10, the review and its fixes were built by
+  parallel agents. One whole-milestone review found no critical and six important issues, all
+  fixed in #52 and #54 with tests.
+  - `@aicommerce/i18n`: English and Persian catalogs, ICU, right-to-left.
+  - Module switching: presets `minimal` and `full`, `module.*` actions, reloads in every process
+    without a restart (`apps/server/src/app-host.ts`).
+  - `modules/setup` and the setup page (`apps/admin`): a one-time token, the owner with
+    mandatory 2FA, the shop, features, finish.
+  - `@aicommerce/ui`: tokens, light and dark themes, 12 accessible components, and the Orbit logo.
+  - `@aicommerce/cli` (`ai-commerce`): dev, migrate, inspect, module, add (with a declaration
+    review and a trial build), backup and restore.
+  - `create-aicommerce` and the production image (admin, server and worker under one supervisor).
+  - Playwright e2e (`./dev e2e`, a required CI check): 8 tests on desktop and phone sizes.
+  - Docs: guides for i18n, the CLI, module switching and installing;
+    `docs/security/threat-model-m0c.md`; decisions 94 to 142.
+  - QA gate: report in Notion 08 · Testing and QA. One real bug found and fixed (#57).
+  - Tests: 190 unit, 139 integration and 16 end-to-end.
+- Logo: Iman chose C, "Orbit a" (decision 94). It is the `Logo` component and
   `packages/ui/assets/*.svg`.
 
 ## Next
 
-1. Write and build M0c: i18n, CLI, design system, installer, contract test, QA gate. The QA gate
-   checks the TOTP issuer with a real authenticator app.
-2. Move on to M1 and beyond.
+1. M1: write the plan from the spec and build it (the admin dashboard, the chat and the first AI
+   features).
 
 ## Rules for code written on top of M0b
 
@@ -72,6 +87,18 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
   target's permissions. Decide whether removing roles should too.
 - A disabled admin gets 401 (treated as a guest), not 403.
 
+## Deferred minors from the M0c review (pick up where they fit)
+
+- A NOTIFY sent while a process's LISTEN connection reconnects is lost; that process keeps the
+  old module set until the next change. Fix: reload in postgres.js's `onlisten` callback.
+- Two module changes at the same moment can lose one (each writes the full list). Fix: an
+  advisory transaction lock in enable, disable and finish.
+- `restore` accepts any custom-format dump, not only an AI Commerce backup.
+- `add` can leave `node_modules` out of step with the lockfile when it upgrades an existing
+  dependency and is then rejected.
+- During start-up the admin answers `/healthz` with 500 until the server listens.
+- Two CSP "inline style" warnings in Chrome's console on the setup page, of unknown source.
+
 ## Standing rules
 
 - Docker only. Use Iman's Chrome for manual QA.
@@ -84,11 +111,15 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
 
 ## Open items
 
+- TOTP issuer (decision 76): Iman scans the setup QR code with a real authenticator app and says
+  whether it shows "AI Commerce" or "AI+Commerce".
+- Persian strings need a review by a native speaker.
+
 - Sessions slide (decision 93): choose an absolute session cap, or keep sliding sessions.
 - Check decisions 21 and 34 in `docs/decisions/log.md`: attributed to Claude where Notion was
   unclear.
 
-- Register the `@aicommerce` npm scope.
+- Register the `@aicommerce` npm scope and an image registry; publish at 1.0.
 - Gemini API key (M1): create it in the browser and store it in a git-ignored `.env`.
 - Shopify development store for M3 testing: Iman provides it.
 - Dependabot PRs #9 to #15 are left for Iman. #9 (Node 26 image) and #15 (`@types/node` 26)

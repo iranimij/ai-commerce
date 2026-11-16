@@ -46,8 +46,24 @@ Shopify and Shopware, for shops of any size.
 ## Documentation
 
 - [Guides](docs/guides/README.md): one page per contract, with examples from `modules/sample`.
-- [Threat model (M0b)](docs/security/threat-model-m0b.md).
+- Threat models: [M0b](docs/security/threat-model-m0b.md) (data, auth, server) and
+  [M0c](docs/security/threat-model-m0c.md) (install, setup, CLI, module switching).
 - [Decisions log](docs/decisions/log.md).
+
+## Install
+
+Not on npm yet: the `@aicommerce` scope and the image are published at 1.0. To try it now, with
+only Docker and git:
+
+```sh
+git clone https://github.com/iranimij/ai-commerce && cd ai-commerce
+./dev pnpm install && ./dev pnpm build
+docker compose up -d server admin
+docker compose logs server   # open the setup link it prints (http://localhost:3001/setup?token=…)
+```
+
+Once published, a shop will be one command: `npm create @aicommerce my-shop`. See
+[Installing a shop](docs/guides/installing.md).
 
 ## Development
 

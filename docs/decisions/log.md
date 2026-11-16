@@ -489,3 +489,201 @@ The logo is proposal C, "Orbit a": a lowercase a with a dot orbiting its bowl. T
 unchanged, since all three proposals shared it (ink #111318, paper #F4F4F1, accent #3046D9, and
 #7D8CFF on dark, in Space Grotesk). The mark is `Logo` in `@aicommerce/ui`, plus SVG files for the
 favicon and app icon.
+
+### 95 · 2026-11-16 · Iman
+
+Work may run in parallel background agents. Each works in its own git worktree and Docker project,
+merges its own pull request when CI is green, and reports its rulings. Used for M0c Tasks 8, 9 and
+10, the review and its fixes.
+
+## M0c implementation rulings (2026-11-16)
+
+Decided by Claude and its agents while building M0c. Each line says what it costs if wrong.
+
+### 96 · 2026-11-16 · Claude (implementer) · Task 1
+
+New dependencies are pinned exactly to a version published at least 14 days earlier (intl-messageformat 12.1.4, not 12.1.5). Cost if wrong: an older patch release is used for up to two weeks.
+
+### 97 · 2026-11-16 · Claude (implementer) · Task 1
+
+`Translator.t` and `has` are function properties, so `const { t } = translator` works. Cost if wrong: none.
+
+### 98 · 2026-11-16 · Claude (implementer) · Task 1
+
+Two catalogs with the same namespace are rejected at start-up. Cost if wrong: none.
+
+### 99 · 2026-11-16 · Claude (implementer) · Task 2
+
+`resolveModules(...).added[].requiredBy` is `string | null`; null marks a required module. Cost if wrong: none.
+
+### 100 · 2026-11-16 · Claude (implementer) · Task 2
+
+`AppInfo` gains `modules()` and `enabledModules()`. Cost if wrong: none.
+
+### 101 · 2026-11-16 · Claude (implementer) · Task 2
+
+`module_state` has a `position` column, so the enabled list keeps load order. Cost if wrong: none.
+
+### 102 · 2026-11-16 · Claude (implementer) · Task 2
+
+The module state store and the module actions are tested together in `modules/system`. Cost if wrong: none.
+
+### 103 · 2026-11-16 · Claude (implementer) · Task 3
+
+`createServer` and `createWorker` take `app: App | (() => App)`. Cost if wrong: none.
+
+### 104 · 2026-11-16 · Claude (implementer) · Task 3
+
+The contract test runs as a named step in the required `ci` job. Cost if wrong: none.
+
+### 105 · 2026-11-16 · Claude (implementer) · Task 3
+
+The NOTIFY payload is the schema name and listeners ignore other schemas. Cost if wrong: none.
+
+### 106 · 2026-11-16 · Claude (implementer) · Task 3
+
+A stored module that is no longer installed is skipped and reported, so the shop still starts. Cost if wrong: its actions answer 404 until it is installed again.
+
+### 107 · 2026-11-16 · Claude (implementer) · Task 4
+
+The setup tests live in `apps/server`, which has the real wiring and HTTP. Cost if wrong: none.
+
+### 108 · 2026-11-16 · Claude (implementer) · Task 4
+
+The server applies the setup rate limit to every `setup.*` call except `setup.status`; signed-in admins are counted per admin (changed in #52). Cost if wrong: an owner who retries a lot waits up to a minute.
+
+### 109 · 2026-11-16 · Claude (implementer) · Task 4
+
+A signed-in owner with 2FA may continue setup without the token. Superseded in part by #52: a token is now issued on every start until setup is finished. Cost if wrong: anyone reading the log can change shop details or modules until setup is finished; they cannot create a second owner or finish without the owner's 2FA.
+
+### 110 · 2026-11-16 · Claude (implementer) · Task 4
+
+`setup.status` shows the PostgreSQL version only while setup is unfinished. Cost if wrong: none.
+
+### 111 · 2026-11-16 · Claude (implementer) · Task 4
+
+`setup.choose-modules` stores the resolved list in `setup_state`; `setup.finish` applies it. Once chosen, `setup.status` reports the step `finish` (#57). Cost if wrong: none.
+
+### 112 · 2026-11-16 · Claude (implementer) · Task 5
+
+Design-system dependencies are pinned to the newest releases at least 14 days old. Cost if wrong: as Task 1.
+
+### 113 · 2026-11-16 · Claude (implementer) · Task 5
+
+axe's colour-contrast rule is off in jsdom; contrast is checked from the token values (4.5:1, both themes). Cost if wrong: a contrast problem made by layout, not tokens, is caught only in e2e.
+
+### 114 · 2026-11-16 · Claude (implementer) · Task 5
+
+Themes are set with `data-theme` on any element; the dark values are repeated under `prefers-color-scheme` and a test keeps them equal. Cost if wrong: none.
+
+### 115 · 2026-11-16 · Claude (implementer) · Task 5
+
+Success colour is #0b6e4c, not the logo palette's #0f8a5f (4.4:1 on white). Cost if wrong: none.
+
+### 116 · 2026-11-16 · Claude (implementer) · Task 6
+
+`readEnv` stays in the server; `@aicommerce/db` exports `databaseEnv` and `parseEnv` for the CLI. Cost if wrong: none.
+
+### 117 · 2026-11-16 · Claude (implementer) · Task 6
+
+The CLI gets the first-party module list from a `@aicommerce/server` entry. Cost if wrong: a package depends on an app.
+
+### 118 · 2026-11-16 · Claude (implementer) · Task 6
+
+`module enable` and `disable` run the module actions on the runtime role; the server runs new migrations when it hears the change. Cost if wrong: a shop with no server running gets the migrations at its next start.
+
+### 119 · 2026-11-16 · Claude (implementer) · Task 6
+
+`inspect` builds the app with every installed module on, without a database. Cost if wrong: it shows wraps of modules switched off in this shop.
+
+### 120 · 2026-11-16 · Claude (implementer) · Task 6
+
+`backup` and `restore` take `--schema` (for the tests); passwords go in `PGPASSWORD`, never on the command line. Cost if wrong: none.
+
+### 121 · 2026-11-16 · Claude (implementer) · Task 6
+
+`dev` restarts on built code and asks for `pnpm build` after a change. Cost if wrong: a slower edit loop until a watch build exists.
+
+### 122 · 2026-11-16 · Claude (implementer) · Task 7
+
+A third-party package's migrations are its `migrations/` folder; server and CLI share one `Install` from `loadInstall(dir)`. Cost if wrong: a package with migrations elsewhere is not migrated.
+
+### 123 · 2026-11-16 · Claude (implementer) · Task 7
+
+Reviewing a package imports it, which runs its top-level code; the server also imports every listed package at every start, enabled or not. Cost if wrong: a malicious package runs code with the shop's environment. Only add packages you would run.
+
+### 124 · 2026-11-16 · Claude (implementer) · Task 7
+
+A rejected or failed `add` runs `pnpm remove` and writes back the exact bytes of `package.json`, the lockfile and the config. Cost if wrong: none.
+
+### 125 · 2026-11-16 · Claude (implementer) · Task 8
+
+The admin's `/api` proxy is in `proxy.ts`, so one build reaches any server address. Cost if wrong: none.
+
+### 126 · 2026-11-16 · Claude (implementer) · Task 8
+
+"Choose features" uses `module.list` through the owner's session. Cost if wrong: a visitor with only the token is asked to sign in.
+
+### 127 · 2026-11-16 · Claude (implementer) · Task 8
+
+The admin's CSP allows inline style attributes (Radix renders one); scripts and `<style>` need the nonce. Cost if wrong: a slightly weaker CSP.
+
+### 128 · 2026-11-16 · Claude (implementer) · Task 8
+
+`AICOMMERCE_TRUSTED_PROXIES` stays 0 by default; behind an overwriting TLS proxy the README says to set 1. Cost if wrong: without it, every visitor behind the proxy shares one rate-limit address.
+
+### 129 · 2026-11-16 · Claude (implementer) · Task 9
+
+The `.env` template is stored as `templates/env`, because git and npm skip `.env` files. Cost if wrong: none.
+
+### 130 · 2026-11-16 · Claude (implementer) · Task 9
+
+The shop is published on 127.0.0.1 only; the README asks for a TLS proxy in front. Cost if wrong: VPS users edit one line.
+
+### 131 · 2026-11-16 · Claude (implementer) · Task 9
+
+A one-shot `migrate` service creates the runtime role and runs migrations before the shop starts. Cost if wrong: a slightly slower start.
+
+### 132 · 2026-11-16 · Claude (implementer) · Task 9
+
+`aicommerce.config.json` is written but not mounted; the stock image runs first-party modules only. Cost if wrong: third-party modules need a custom image.
+
+### 133 · 2026-11-16 · Claude (implementer) · Task 9
+
+No PostgreSQL client in the image; generated shops back up with the `db` container's `pg_dump` (documented in their README). Cost if wrong: `ai-commerce backup` does not run inside the shop container.
+
+### 134 · 2026-11-16 · Claude (implementer) · Task 9
+
+No Docker HEALTHCHECK, because the worker role has no HTTP port. Cost if wrong: orchestrators check `/healthz` themselves.
+
+### 135 · 2026-11-16 · Claude (implementer) · Task 10
+
+Inside the container the admin takes `PORT` and the server `PORT + 1`. Cost if wrong: `PORT=65535` fails; the server port is reachable on the Docker network.
+
+### 136 · 2026-11-16 · Claude (implementer) · Task 10
+
+The admin passes `/healthz` and `/readyz` to the server. Cost if wrong: none.
+
+### 137 · 2026-11-16 · Claude (implementer) · Task 10
+
+The image runs the admin from Next's standalone output, without its own dependencies; a pnpm override keeps Playwright out. Cost if wrong: none.
+
+### 138 · 2026-11-16 · Claude (implementer) · Task 10
+
+The dev admin keeps `next start` with standalone output. Cost if wrong: a future Next.js may refuse it.
+
+### 139 · 2026-11-16 · Claude (implementer) · Task 10
+
+E2E uses a fixed pool of 15 shops from the built image, with no Docker socket, no retries, Chromium desktop and Pixel 7. Cost if wrong: a new test needs a new shop in three places; no Firefox or WebKit coverage.
+
+### 140 · 2026-11-16 · Claude (implementer) · Final review
+
+`restore` empties the target schemas and loads the backup through `psql` in one transaction, killing `psql` if `pg_restore` fails; it warns when the secret key does not match. Cost if wrong: the migration role must own `public`; other roles lose their rights on it.
+
+### 141 · 2026-11-16 · Claude (implementer) · Final review
+
+Third-party modules may not be `required`; `add` builds the app with the new module switched on before asking. Cost if wrong: a module with failing migration SQL is still not caught.
+
+### 142 · 2026-11-16 · Claude (implementer) · QA
+
+The PostgreSQL version on the setup page is wrapped in Unicode isolates. The QA "bug" that led to it was a misreading: the line was laid out correctly before. Cost if wrong: none.
