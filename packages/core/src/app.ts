@@ -3,7 +3,8 @@ import { createEventBus, type EventBus, type EventBusOptions } from './events.js
 import type { ModuleDefinition } from './module.js'
 import { createPipelines, type Pipelines } from './pipeline.js'
 import { createRegistry, type Registry, type RegistryOptions } from './registry.js'
-import { resourceActions } from './resource.js'
+import { appInfo, type AppInfo, type AttributeDefinition } from './attributes.js'
+import { resourceActions, type ResourceDefinition } from './resource.js'
 import type { ServiceDefinition, ServiceProvision } from './service.js'
 
 export interface ActionInfo {
@@ -227,6 +228,41 @@ export function createApp(options: AppOptions): App {
       registry.addWrap(w)
     }
   }
+
+  const resources = new Map<string, ResourceDefinition>()
+  for (const m of ordered) for (const r of m.resources ?? []) resources.set(r.name, r)
+  const moduleAttributes = new Map<string, AttributeDefinition[]>()
+  for (const m of ordered) {
+    for (const a of m.attributes ?? []) {
+      const r = resources.get(a.resource)
+      if (!r?.attributes) {
+        throw new Error(
+          `Module "${m.name}" adds attribute "${a.code}" to "${a.resource}", which is not a resource with attributes`,
+        )
+      }
+      if (r.module !== m.name && !closure.get(m.name)?.has(r.module)) {
+        throw new Error(
+          `Module "${m.name}" adds attribute "${a.code}" to "${a.resource}" but does not depend on module "${r.module}"`,
+        )
+      }
+      const list = moduleAttributes.get(a.resource) ?? []
+      if (list.some((other) => other.code === a.code)) {
+        throw new Error(`Attribute "${a.resource}.${a.code}" is defined twice`)
+      }
+      list.push({ ...a, source: 'module', module: m.name })
+      moduleAttributes.set(a.resource, list)
+    }
+  }
+  const permissions = [
+    ...new Set([...actionOwner.keys()].flatMap((name) => registry.get(name)?.permission ?? [])),
+  ].sort()
+  const info: AppInfo = {
+    resources: () => [...resources.values()],
+    moduleAttributes: (resource) => [...(moduleAttributes.get(resource) ?? [])],
+    permissions: () => [...permissions],
+    settings: () => [],
+  }
+  providers.set(appInfo.name, { provider: 'core', replaced: [], implementation: info })
 
   function inspect(kind: 'action' | 'pipeline' | 'event' | 'service', name: string): unknown {
     if (kind === 'service') {

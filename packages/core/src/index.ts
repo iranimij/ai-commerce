@@ -49,3 +49,18 @@ export {
   type Revision,
   type WriteMeta,
 } from './resource.js'
+export {
+  appInfo,
+  attributeInput,
+  attributeStore,
+  attributeValueSchema,
+  checkAttributeValues,
+  defineAttribute,
+  merchantAttribute,
+  visibleAttributes,
+  type AppInfo,
+  type AttributeDefinition,
+  type AttributeInput,
+  type AttributeStore,
+  type AttributeType,
+} from './attributes.js'

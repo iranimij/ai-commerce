@@ -1,6 +1,13 @@
 import { z } from 'zod'
 import type { ActionContext, ActionDefinition, Risk } from './action.js'
 import type { Actor, ActorType } from './actor.js'
+import {
+  appInfo,
+  attributeStore,
+  checkAttributeValues,
+  visibleAttributes,
+  type AttributeDefinition,
+} from './attributes.js'
 import { ActionError } from './errors.js'
 import { classify, privacyOf } from './privacy.js'
 import { defineService } from './service.js'
@@ -90,7 +97,7 @@ export interface ResourceStore {
     attributes: Record<string, unknown>,
     meta: WriteMeta,
   ): Promise<ResourceRecord>
-  /** Throws `ActionError` `not_found` or `conflict`. */
+  /** Throws `ActionError` `not_found` or `conflict`. An attribute set to null is removed. */
   update(
     resource: ResourceDefinition,
     id: string,
@@ -211,17 +218,6 @@ const revisionSchema = z.object({
 const page = (item: z.ZodType) =>
   z.object({ items: z.array(item), nextCursor: z.string().nullable() })
 
-/** Task 5 replaces this with validation against the attribute definitions. */
-function checkAttributes(
-  resource: ResourceDefinition,
-  attributes: Record<string, unknown> | undefined,
-): Record<string, unknown> | undefined {
-  if (attributes && Object.keys(attributes).length > 0) {
-    throw new ActionError('invalid_input', `Resource "${resource.name}" has no attributes defined`)
-  }
-  return attributes
-}
-
 /** The seven actions every resource gets. */
 export function resourceActions(resource: ResourceDefinition): ActionDefinition[] {
   const { name, label, permissions } = resource
@@ -235,6 +231,20 @@ export function resourceActions(resource: ResourceDefinition): ActionDefinition[
     : {}
   const store = (ctx: ActionContext) => ctx.service(resourceStore)
   const meta = (ctx: ActionContext) => ({ action: ctx.actionName, actor: ctx.actor })
+  // shortcut: definitions are read on every call; add a cache with invalidation once profiling shows the need (M1).
+  const defsOf = async (ctx: ActionContext): Promise<AttributeDefinition[]> =>
+    resource.attributes
+      ? [
+          ...ctx.service(appInfo).moduleAttributes(name),
+          ...(await ctx.service(attributeStore).list(name)),
+        ]
+      : []
+  const show = (defs: AttributeDefinition[], rec: ResourceRecord): ResourceRecord => ({
+    ...rec,
+    attributes: visibleAttributes(defs, rec.attributes),
+  })
+  const given = (input: Record<string, unknown>) =>
+    input.attributes as Record<string, unknown> | undefined
 
   const action = (
     verb: string,
@@ -262,13 +272,17 @@ export function resourceActions(resource: ResourceDefinition): ActionDefinition[
       permissions.read,
       z.object({ filter: filterSchema(resource.fields).optional(), ...attributes, cursor, limit }),
       page(record),
-      (input, ctx) =>
-        store(ctx).list(resource, {
+      async (input, ctx) => {
+        const defs = await defsOf(ctx)
+        const filter = given(input) && checkAttributeValues(defs, given(input), 'filter')
+        const found = await store(ctx).list(resource, {
           ...(input.filter ? { filter: input.filter as Record<string, unknown> } : {}),
-          ...(input.attributes ? { attributes: input.attributes as Record<string, unknown> } : {}),
+          ...(filter ? { attributes: filter } : {}),
           ...(input.cursor ? { cursor: input.cursor as string } : {}),
           limit: input.limit as number,
-        }),
+        })
+        return { ...found, items: found.items.map((r) => show(defs, r)) }
+      },
     ),
     action(
       'get',
@@ -280,7 +294,7 @@ export function resourceActions(resource: ResourceDefinition): ActionDefinition[
       async (input, ctx) => {
         const found = await store(ctx).get(resource, input.id as string)
         if (!found) throw new ActionError('not_found', `${label.singular} not found`)
-        return found
+        return show(await defsOf(ctx), found)
       },
     ),
     action(
@@ -290,13 +304,17 @@ export function resourceActions(resource: ResourceDefinition): ActionDefinition[
       permissions.write,
       z.object({ values: resource.fields, ...attributes }),
       record,
-      (input, ctx) =>
-        store(ctx).create(
+      async (input, ctx) => {
+        const defs = await defsOf(ctx)
+        const attrs = checkAttributeValues(defs, given(input), 'create')
+        const created = await store(ctx).create(
           resource,
           input.values as Record<string, unknown>,
-          checkAttributes(resource, input.attributes as Record<string, unknown> | undefined) ?? {},
+          attrs,
           meta(ctx),
-        ),
+        )
+        return show(defs, created)
+      },
     ),
     action(
       'update',
@@ -305,16 +323,17 @@ export function resourceActions(resource: ResourceDefinition): ActionDefinition[
       permissions.write,
       z.object({ id, version, values: patchSchema(resource.fields), ...attributes }),
       record,
-      (input, ctx) => {
+      async (input, ctx) => {
         const values = input.values as Record<string, unknown>
-        const attrs = checkAttributes(
-          resource,
-          input.attributes as Record<string, unknown> | undefined,
-        )
-        if (Object.keys(values).length === 0 && attrs === undefined) {
+        const defs = await defsOf(ctx)
+        const attrs = given(input) && checkAttributeValues(defs, given(input), 'update')
+        if (
+          Object.keys(values).length === 0 &&
+          (attrs === undefined || Object.keys(attrs).length === 0)
+        ) {
           throw new ActionError('invalid_input', 'Nothing to update')
         }
-        return store(ctx).update(
+        const updated = await store(ctx).update(
           resource,
           input.id as string,
           input.version as number,
@@ -322,6 +341,7 @@ export function resourceActions(resource: ResourceDefinition): ActionDefinition[
           attrs,
           meta(ctx),
         )
+        return show(defs, updated)
       },
     ),
     action(
@@ -361,7 +381,7 @@ export function resourceActions(resource: ResourceDefinition): ActionDefinition[
       async (input, ctx) => {
         const revision = await store(ctx).revision(resource, input.revisionId as string)
         if (!revision) throw new ActionError('not_found', 'Revision not found')
-        return store(ctx).restore(resource, revision, meta(ctx))
+        return show(await defsOf(ctx), await store(ctx).restore(resource, revision, meta(ctx)))
       },
     ),
   ]

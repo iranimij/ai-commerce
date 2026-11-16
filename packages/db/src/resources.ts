@@ -24,6 +24,16 @@ const json = (value: unknown) => sql`${JSON.stringify(value)}::jsonb`
 
 type Row = Record<string, unknown>
 
+// Given keys replace their values; a null value removes the key.
+function patchAttributes(patch: Record<string, unknown>): SQL {
+  const set = Object.fromEntries(Object.entries(patch).filter(([, v]) => v !== null))
+  const removed = Object.keys(patch).filter((k) => patch[k] === null)
+  return sql.join(
+    [sql`(attributes || ${json(set)})`, ...removed.map((k) => sql`${k}::text`)],
+    sql` - `,
+  )
+}
+
 function encodeCursor(value: unknown[]): string {
   return Buffer.from(JSON.stringify(value)).toString('base64url')
 }
@@ -189,7 +199,7 @@ export function createPgResourceStore(database: Database): ResourceStore {
       const set = [
         sql`version = version + 1`,
         sql`updated_at = ${NOW}`,
-        ...(attributes === undefined ? [] : [sql`attributes = attributes || ${json(attributes)}`]),
+        ...(attributes === undefined ? [] : [sql`attributes = ${patchAttributes(attributes)}`]),
         ...assignments(r, values),
       ]
       const [row] = await run(sql`with updated as (
