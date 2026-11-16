@@ -57,8 +57,8 @@ Read this first, then the Notion page "AI Commerce" (Start here section).
 
 ## Next
 
-1. M1: write the plan from the spec and build it (the admin dashboard, the chat and the first AI
-   features).
+1. M1a (catalog, media, search, SEO): `docs/superpowers/plans/2026-11-16-m1a-catalog-search-seo.md`.
+   Then M1b (dashboard, storefront, inline editing) and M1c (the AI admin and MCP).
 
 ## Rules for code written on top of M0b
 
