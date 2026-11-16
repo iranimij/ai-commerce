@@ -1,5 +1,6 @@
 {
   "common": {
+    "brand": "AI Commerce",
     "loading": "Loading",
     "saving": "Saving",
     "retry": "Try again",

@@ -1,5 +1,6 @@
 {
   "common": {
+    "brand": "AI Commerce",
     "loading": "در حال بارگذاری",
     "saving": "در حال ذخیره",
     "retry": "دوباره امتحان کنید",
