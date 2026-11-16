@@ -1,0 +1,33 @@
+{
+  "name": "@aicommerce/module-access",
+  "version": "0.0.0",
+  "description": "Admin roles and accounts, with escalation and last-owner rules",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@aicommerce/auth": "workspace:*",
+    "@aicommerce/core": "workspace:*",
+    "@aicommerce/db": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@aicommerce/module-sample": "workspace:*"
+  }
+}
