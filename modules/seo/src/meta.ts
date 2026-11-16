@@ -8,10 +8,11 @@ const pub = <S extends z.ZodType>(schema: S) => classify(schema, 'public')
 
 /** Markdown as plain text on one line, cut at a word to at most `max` characters. */
 export function describeText(markdown: string, max = 160): string {
+  // Only the start can reach the description; bounded repeats keep hostile text linear.
   const text = markdown
-    .replace(/!\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/\[([^\]]*)\]\([^)]*\)/g, '$1')
-    .replace(/<[^>]*>/g, ' ')
+    .slice(0, 4000)
+    .replace(/!?\[([^\]]{0,300})\]\([^)]{0,2000}\)/g, '$1')
+    .replace(/<[^>]{0,300}>/g, ' ')
     .replace(/^\s{0,3}(#{1,6}|>|[-*+]|\d+[.)])\s+/gm, '')
     .replace(/[*_~`]+/g, '')
     .replace(/\s+/g, ' ')

@@ -19,6 +19,10 @@ describe('meta', () => {
     // One word longer than the limit is cut inside it.
     expect(describeText('x'.repeat(300))).toHaveLength(160)
     expect(describeText('')).toBe('')
+    // Hostile Markdown stays fast.
+    const started = performance.now()
+    describeText('![\\'.repeat(20_000) + '![]('.repeat(20_000) + '<'.repeat(20_000))
+    expect(performance.now() - started).toBeLessThan(200)
   })
 })
 
