@@ -8,5 +8,8 @@
   "media.file-info",
   "catalog.product-view",
   "catalog.category-view",
-  "catalog.menu"
+  "catalog.menu",
+  "seo.resolve",
+  "seo.meta",
+  "seo.sitemap"
 ]

@@ -27,7 +27,8 @@ test('the public actions are exactly the reviewed list', () => {
   // the server limits token guesses per address (per admin when signed in), and all refuse once
   // setup is finished. media.file-info gives only an image's width, for the public image route.
   // catalog.product-view, category-view and menu return only active products, enabled
-  // categories and variants, and public attributes.
+  // categories and variants, and public attributes. seo.resolve, meta and sitemap give only the
+  // live paths of those (checked against the record) and redirects, which point only to paths.
   expect(actual).toEqual([...reviewed].sort())
 })
 

@@ -109,7 +109,9 @@
     "media": "Media",
     "mediaHint": "Image uploads, made safe and resized for every screen.",
     "catalog": "Catalog",
-    "catalogHint": "Products, variants, categories and attribute sets."
+    "catalogHint": "Products, variants, categories and attribute sets.",
+    "seo": "SEO",
+    "seoHint": "Clean web addresses, redirects when one changes, and what search engines read."
   },
   "extras": {
     "title": "Import and sample data",
