@@ -76,6 +76,9 @@ export function SetupFlow({ locale, theme: initialTheme }: { locale: string; the
   const [view, setView] = useState<View | null>(null)
   const [credentials, setCredentials] = useState<Credentials | null>(null)
   const [enabled, setEnabled] = useState<string[]>([])
+  // Known when the modules were chosen in this visit; after a reload at extras it is not offered.
+  const [chosen, setChosen] = useState<string[]>([])
+  const [sample, setSample] = useState(false)
   const main = useRef<HTMLElement>(null)
 
   const load = useCallback(async () => {
@@ -198,7 +201,8 @@ export function SetupFlow({ locale, theme: initialTheme }: { locale: string; the
       <FeaturesStep
         t={t}
         token={token}
-        onChosen={() => {
+        onChosen={(c) => {
+          setChosen(c.enabled)
           setView('extras')
         }}
       />
@@ -208,14 +212,23 @@ export function SetupFlow({ locale, theme: initialTheme }: { locale: string; the
       <ExtrasStep
         t={t}
         token={token}
-        onFinished={(e) => {
+        offerSample={chosen.includes('catalog')}
+        onFinished={(e, s) => {
           setEnabled(e)
+          setSample(s)
           setView('done')
         }}
       />
     )
   } else if (view === 'done' || view === 'finished') {
-    content = <DoneStep t={t} locale={locale} enabled={view === 'done' ? enabled : null} />
+    content = (
+      <DoneStep
+        t={t}
+        locale={locale}
+        enabled={view === 'done' ? enabled : null}
+        sample={view === 'done' && sample}
+      />
+    )
   } else {
     content = (
       <Card title={t('setup.noTokenTitle')}>

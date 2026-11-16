@@ -61,7 +61,8 @@ export async function install(
     preset,
     locale = 'en',
     at = nothing,
-  }: { preset: 'minimal' | 'full'; locale?: 'en' | 'fa'; at?: At },
+    sample = false,
+  }: { preset: 'minimal' | 'full'; locale?: 'en' | 'fa'; at?: At; sample?: boolean },
 ) {
   const m = messages(locale)
   await page.goto(shop.link)
@@ -105,6 +106,7 @@ export async function install(
 
   await expect(heading(page, m.extras.title)).toBeVisible()
   await at('extras')
+  if (sample) await page.getByRole('checkbox', { name: m.extras.sample }).click()
   await page.getByRole('button', { name: m.extras.finish }).click()
 
   await expect(heading(page, m.done.title)).toBeVisible()
