@@ -46,6 +46,13 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm db:roles
+      # pg_dump and pg_restore must match the PostgreSQL 17 server for the CLI backup tests.
+      - name: Install the PostgreSQL 17 client
+        run: |
+          sudo apt-get install -y postgresql-common
+          sudo /usr/share/postgresql-common/pgdg/apt.postgresql.org.sh -y
+          sudo apt-get install -y postgresql-client-17
+          pg_dump --version
       - name: Check pull request title
         if: github.event_name == 'pull_request'
         env:

@@ -1,4 +1,13 @@
 FROM node:24-bookworm-slim
+# pg_dump and pg_restore 17 for ai-commerce backup and restore; Debian bookworm ships 15.
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates curl \
+  && install -d /usr/share/postgresql-common/pgdg \
+  && curl -fsSL -o /usr/share/postgresql-common/pgdg/apt.postgresql.org.asc https://www.postgresql.org/media/keys/ACCC4CF8.asc \
+  && echo 'deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main' > /etc/apt/sources.list.d/pgdg.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends postgresql-client-17 \
+  && rm -rf /var/lib/apt/lists/*
 RUN npm install -g pnpm@12.21.0 \
   && mkdir -p /app/node_modules /pnpm-store \
   && chown -R node:node /app /pnpm-store
