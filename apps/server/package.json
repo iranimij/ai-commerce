@@ -27,6 +27,7 @@
     "@aicommerce/module-catalog": "workspace:*",
     "@aicommerce/module-media": "workspace:*",
     "@aicommerce/module-sample": "workspace:*",
+    "@aicommerce/module-search": "workspace:*",
     "@aicommerce/module-setup": "workspace:*",
     "@aicommerce/module-system": "workspace:*",
     "@hono/node-server": "2.1.8",

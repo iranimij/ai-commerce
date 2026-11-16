@@ -281,6 +281,9 @@ importers:
       '@aicommerce/module-sample':
         specifier: workspace:*
         version: link:../../modules/sample
+      '@aicommerce/module-search':
+        specifier: workspace:*
+        version: link:../../modules/search
       '@aicommerce/module-setup':
         specifier: workspace:*
         version: link:../../modules/setup
@@ -382,6 +385,30 @@ importers:
       '@aicommerce/db':
         specifier: workspace:*
         version: link:../../packages/db
+      zod:
+        specifier: ^4.6.7
+        version: 4.6.7
+
+  modules/search:
+    dependencies:
+      '@aicommerce/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@aicommerce/db':
+        specifier: workspace:*
+        version: link:../../packages/db
+      '@aicommerce/module-catalog':
+        specifier: workspace:*
+        version: link:../catalog
+      '@aicommerce/module-media':
+        specifier: workspace:*
+        version: link:../media
+      '@aicommerce/module-setup':
+        specifier: workspace:*
+        version: link:../setup
+      drizzle-orm:
+        specifier: ^0.45.4
+        version: 0.45.4(kysely@0.29.9)(postgres@4.1.1)
       zod:
         specifier: ^4.6.7
         version: 4.6.7
