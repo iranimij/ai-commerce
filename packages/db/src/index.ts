@@ -8,3 +8,4 @@ export {
 export { createDbAuditSink } from './audit.js'
 export { grantAppRole } from './roles.js'
 export { createRateLimiter, type RateLimiter, type RateLimitRule } from './rate-limit.js'
+export { createPgResourceStore } from './resources.js'

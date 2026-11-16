@@ -12,15 +12,18 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "migrations"
   ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
   },
   "dependencies": {
     "@aicommerce/core": "workspace:*",
-    "zod": "^4.6.7"
+    "zod": "^4.6.7",
+    "@aicommerce/db": "workspace:*"
   }
 }

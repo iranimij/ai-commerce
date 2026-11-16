@@ -35,3 +35,17 @@ export {
   type ModelPolicy,
   type PrivacyClass,
 } from './privacy.js'
+export {
+  defineResource,
+  resourceActions,
+  resourceStore,
+  type ListQuery,
+  type Page,
+  type ResourceDefinition,
+  type ResourceInput,
+  type ResourcePermissions,
+  type ResourceRecord,
+  type ResourceStore,
+  type Revision,
+  type WriteMeta,
+} from './resource.js'
