@@ -71,6 +71,18 @@ jobs:
           pnpm --filter @aicommerce/module-sample test:integration
           pnpm --filter @aicommerce/server exec vitest run --config vitest.integration.config.ts src/contract.integration.test.ts
 
+  # The production image from docker/Dockerfile. Publishing it waits for the @aicommerce scope.
+  image:
+    name: image
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Build the production image
+        run: docker build -f docker/Dockerfile -t ai-commerce:ci .
+      - name: The image runs as a non-root user
+        run: test "$(docker run --rm ai-commerce:ci id -u)" != 0
+
   # Not a required check: a new advisory must not turn every unrelated pull request red.
   audit:
     name: audit

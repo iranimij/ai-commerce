@@ -1,0 +1,28 @@
+{
+  "name": "@aicommerce/create",
+  "version": "0.0.0",
+  "description": "npm create @aicommerce: a new shop folder with Docker Compose and fresh secrets",
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "create-aicommerce": "./dist/index.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "templates"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "@aicommerce/server": "workspace:*"
+  }
+}
