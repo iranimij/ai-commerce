@@ -24,12 +24,16 @@ import {
 } from '@aicommerce/db'
 import { access } from '@aicommerce/module-access'
 import { sample, sampleMigrations } from '@aicommerce/module-sample'
+import { setup, setupMigrations } from '@aicommerce/module-setup'
 import { system } from '@aicommerce/module-system'
 
 /** Every module this server can run. */
-export const firstPartyModules = [system, access, sample]
+export const firstPartyModules = [system, access, sample, setup]
 
-const moduleMigrations: Record<string, MigrationSource[]> = { sample: [sampleMigrations] }
+const moduleMigrations: Record<string, MigrationSource[]> = {
+  sample: [sampleMigrations],
+  setup: [setupMigrations],
+}
 
 /** Core and auth tables, then those of the enabled modules. */
 export function migrationSources(enabled: readonly string[]): MigrationSource[] {
