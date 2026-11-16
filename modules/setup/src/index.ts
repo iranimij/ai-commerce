@@ -71,7 +71,7 @@ export const aiKey = defineSetting({
 const db = (ctx: ActionContext) => ctx.service(databaseService).current()
 const meta = (ctx: ActionContext) => ({ action: ctx.actionName, actor: ctx.actor })
 const token = z.string().max(200).optional()
-const step = z.enum(['owner', 'two-factor', 'shop', 'modules', 'done'])
+const step = z.enum(['owner', 'two-factor', 'shop', 'modules', 'finish', 'done'])
 
 interface State {
   tokenHash: string | null
@@ -110,7 +110,7 @@ async function nextStep(ctx: ActionContext, state: State): Promise<z.infer<typeo
   if (owners.length === 0) return 'owner'
   if (!owners.some((o) => o.two_factor_enabled === true)) return 'two-factor'
   if ((await ctx.service(settingStore).read(shopName.key, null)) === undefined) return 'shop'
-  return 'modules'
+  return state.modules === null ? 'modules' : 'finish'
 }
 
 export const status = defineAction({

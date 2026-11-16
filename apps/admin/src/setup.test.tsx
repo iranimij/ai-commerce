@@ -241,3 +241,17 @@ test('the token leaves the address bar through the router', async () => {
   })
   expect(sessionStorage.getItem('aicommerce-setup-token')).toBe('the-token')
 })
+
+test('the database version keeps its own direction inside Persian text', () => {
+  const version = '17.12 (Debian 17.12-1.pgdg13+1)'
+  render(
+    <DatabaseStep
+      t={translatorFor('fa').t}
+      database={{ ok: true, version }}
+      onContinue={vi.fn()}
+      onRetry={vi.fn()}
+    />,
+  )
+  // First-strong isolate and pop: the bidi algorithm lays the version out on its own.
+  expect(screen.getByRole('status').textContent).toContain(`⁨${version}⁩`)
+})

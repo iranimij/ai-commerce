@@ -80,6 +80,8 @@ test('status reports the next step', async () => {
   expect(await call(t, 'setup.choose-modules', { token, preset: 'minimal' })).toMatchObject({
     ok: true,
   })
+  // Reloading after the choice resumes at the last step and keeps the choice.
+  expect(await next(t)).toBe('finish')
   expect(await call(t, 'setup.finish', { token })).toMatchObject({ ok: true })
   expect(await next(t)).toBe('done')
 })
