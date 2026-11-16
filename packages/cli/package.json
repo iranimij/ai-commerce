@@ -1,0 +1,35 @@
+{
+  "name": "@aicommerce/cli",
+  "version": "0.0.0",
+  "description": "The ai-commerce command: dev, migrate, inspect, modules, backup and restore",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "ai-commerce": "./dist/bin.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/main.d.ts",
+      "default": "./dist/main.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@aicommerce/core": "workspace:*",
+    "@aicommerce/db": "workspace:*",
+    "@aicommerce/server": "workspace:*",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@aicommerce/module-sample": "workspace:*"
+  }
+}

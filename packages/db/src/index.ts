@@ -5,6 +5,7 @@ export {
   type MigrateOptions,
   type MigrationSource,
 } from './migrate.js'
+export { databaseEnv, parseEnv } from './env.js'
 export { createDbAuditSink } from './audit.js'
 export { grantAppRole } from './roles.js'
 export { createRateLimiter, type RateLimiter, type RateLimitRule } from './rate-limit.js'

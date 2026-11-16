@@ -10,3 +10,6 @@ playwright-report/
 test-results/
 .DS_Store
 .superpowers/
+
+# ai-commerce backup output
+backups/
