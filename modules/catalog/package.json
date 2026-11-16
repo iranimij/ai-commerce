@@ -1,0 +1,32 @@
+{
+  "name": "@aicommerce/module-catalog",
+  "version": "0.0.0",
+  "description": "Products, variants, categories and attribute sets, and the public reads the storefront uses",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@aicommerce/core": "workspace:*",
+    "@aicommerce/db": "workspace:*",
+    "@aicommerce/module-media": "workspace:*",
+    "@aicommerce/module-setup": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "zod": "^4.6.7"
+  }
+}

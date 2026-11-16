@@ -41,3 +41,8 @@ export const greet = defineAction({
 - Await everything: `db.current()` is only valid during the call.
 - Every `permission: null` action must be listed in `apps/server/security/public-actions.json`, or
   CI fails.
+- `ctx.call(name, input)` runs another action from a handler or wrap, as the same actor and with
+  the same confirmation, and returns its `Result`. A write runs in a savepoint of this call's
+  transaction: its failure undoes only its own writes, and this call decides what to do. It gets
+  its own audit row (written at once, so it stays even if this call later fails); its events wait
+  for this call to succeed.

@@ -172,6 +172,67 @@ describe('registry.call', () => {
   })
 })
 
+describe('ctx.call', () => {
+  function nested(permissions: string[]) {
+    const audited: string[] = []
+    const transactions: string[] = []
+    const registry = createRegistry({
+      audit: {
+        write: (e) => {
+          audited.push(`${e.action}:${e.outcome}`)
+          return Promise.resolve()
+        },
+      },
+      transaction: (fn) => {
+        transactions.push('begin')
+        return fn()
+      },
+    })
+    registry.register(
+      defineAction({
+        name: 'order.cancel',
+        description: 'Cancel an order and refund it',
+        input: z.object({ orderId: z.string() }),
+        output: z.object({ refund: z.unknown() }),
+        permission: 'order.cancel',
+        risk: 'destructive',
+        handler: async (input, ctx) => ({
+          refund: await ctx.call('order.refund', { orderId: input.orderId, reason: 'cancel' }),
+        }),
+      }),
+    )
+    registry.register(
+      defineAction({
+        name: 'order.refund',
+        description: 'Refund a paid order',
+        input: z.object({ orderId: z.string(), reason: z.string() }),
+        output: z.object({ refunded: z.string() }),
+        permission: 'order.refund',
+        risk: 'destructive',
+        handler: (input) => Promise.resolve({ refunded: input.orderId }),
+      }),
+    )
+    return { registry, audited, transactions, actor: admin(permissions) }
+  }
+
+  test('runs another action as the same caller, with its own audit entry and transaction', async () => {
+    const { registry, audited, transactions, actor } = nested(['order.cancel', 'order.refund'])
+    const result = await registry.call('order.cancel', { orderId: '7' }, { actor, confirmed: true })
+    expect(result).toEqual({
+      ok: true,
+      output: { refund: { ok: true, output: { refunded: '7' } } },
+    })
+    expect(audited).toEqual(['order.refund:ok', 'order.cancel:ok'])
+    expect(transactions).toEqual(['begin', 'begin'])
+  })
+
+  test("checks the caller's permission and confirmation for the inner action", async () => {
+    const { registry, actor } = nested(['order.cancel'])
+    const denied = await registry.call('order.cancel', { orderId: '7' }, { actor, confirmed: true })
+    expect(denied).toMatchObject({ ok: true, output: { refund: { error: { code: 'forbidden' } } } })
+  })
+})
+
 describe('registry.register', () => {
   test('registering the same name twice throws', () => {
     const { registry } = setup()

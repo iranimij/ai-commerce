@@ -29,13 +29,14 @@ import {
   type MigrationSource,
 } from '@aicommerce/db'
 import { access } from '@aicommerce/module-access'
+import { catalog, catalogMigrations } from '@aicommerce/module-catalog'
 import { createDiskFileStore, files, media, mediaMigrations } from '@aicommerce/module-media'
 import { sample, sampleMigrations } from '@aicommerce/module-sample'
 import { setup, setupMigrations } from '@aicommerce/module-setup'
 import { system } from '@aicommerce/module-system'
 
 /** Every module this server can run. */
-export const firstPartyModules = [system, access, sample, setup, media]
+export const firstPartyModules = [system, access, sample, setup, media, catalog]
 
 /** Where uploaded files are kept when AICOMMERCE_FILES_DIR is not set. */
 export const DEFAULT_FILES_DIR = '/var/lib/aicommerce/files'
@@ -48,7 +49,12 @@ export interface Install {
 
 export const firstParty: Install = {
   modules: firstPartyModules,
-  migrations: { sample: [sampleMigrations], setup: [setupMigrations], media: [mediaMigrations] },
+  migrations: {
+    sample: [sampleMigrations],
+    setup: [setupMigrations],
+    media: [mediaMigrations],
+    catalog: [catalogMigrations],
+  },
 }
 
 export const CONFIG_FILE = 'aicommerce.config.json'

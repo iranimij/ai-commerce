@@ -5,5 +5,8 @@
   "setup.save-shop",
   "setup.choose-modules",
   "setup.finish",
-  "media.file-info"
+  "media.file-info",
+  "catalog.product-view",
+  "catalog.category-view",
+  "catalog.menu"
 ]

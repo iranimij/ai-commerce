@@ -24,6 +24,7 @@
     "@aicommerce/core": "workspace:*",
     "@aicommerce/db": "workspace:*",
     "@aicommerce/module-access": "workspace:*",
+    "@aicommerce/module-catalog": "workspace:*",
     "@aicommerce/module-media": "workspace:*",
     "@aicommerce/module-sample": "workspace:*",
     "@aicommerce/module-setup": "workspace:*",

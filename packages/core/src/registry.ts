@@ -206,6 +206,13 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
         pipelines,
         events: deferredEvents(queue),
         service,
+        call: async (innerName: string, innerInput: unknown) => {
+          // The inner call's events join this call's, so they wait for its commit.
+          const inner: (() => Promise<void>)[] = []
+          const result = await audited(innerName, innerInput, callOptions, inner)
+          if (result.ok) queue.push(...inner)
+          return result
+        },
       })
       // Output is checked before the transaction ends, so bad output rolls back too.
       const run = async (): Promise<unknown> => {
@@ -264,6 +271,18 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
     }
   }
 
+  async function audited(
+    name: string,
+    input: unknown,
+    callOptions: CallOptions,
+    queue: (() => Promise<void>)[],
+  ): Promise<Result<unknown>> {
+    const started = performance.now()
+    const result = await execute(name, input, callOptions, queue)
+    await audit(name, input, callOptions, result, Math.round(performance.now() - started))
+    return result
+  }
+
   return {
     register(action) {
       if (!ACTION_NAME.test(action.name)) {
@@ -297,10 +316,8 @@ export function createRegistry(options: RegistryOptions = {}): Registry {
       (wrapsByAction.get(name) ?? []).map((w) => ({ module: w.module, order: w.order })),
 
     async call(name, input, callOptions) {
-      const started = performance.now()
       const queue: (() => Promise<void>)[] = []
-      const result = await execute(name, input, callOptions, queue)
-      await audit(name, input, callOptions, result, Math.round(performance.now() - started))
+      const result = await audited(name, input, callOptions, queue)
       // After commit and audit (spec 4.3): a failing subscriber can no longer undo the action.
       for (const deliver of queue) await deliver()
       return result
