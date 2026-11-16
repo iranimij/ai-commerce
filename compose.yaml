@@ -19,6 +19,33 @@ services:
       db:
         condition: service_healthy
 
+  # The API and the job worker: ./dev docker compose up server, then http://localhost:3000.
+  server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.dev
+    working_dir: /app
+    # exec: node becomes PID 1 and receives SIGTERM for a graceful stop.
+    command: sh -c "pnpm db:roles && pnpm build && exec node apps/server/dist/main.js"
+    volumes:
+      - .:/app
+      - node_modules:/app/node_modules
+      - pnpm_store:/pnpm-store
+    environment:
+      DATABASE_URL: postgres://aicommerce_app:aicommerce_app@db:5432/aicommerce
+      MIGRATION_DATABASE_URL: postgres://aicommerce:aicommerce@db:5432/aicommerce
+      # Development values only. Production keys come from the environment, never from git.
+      AICOMMERCE_SECRET_KEY: ZGV2ZWxvcG1lbnQtb25seS1zZWNyZXQta2V5LTMyYiE=
+      AICOMMERCE_AUTH_SECRET: development-only-auth-secret-not-for-production
+      AICOMMERCE_PUBLIC_URL: http://localhost:3000
+      CI: 'true'
+      TURBO_TELEMETRY_DISABLED: '1'
+    ports:
+      - '127.0.0.1:3000:3000'
+    depends_on:
+      db:
+        condition: service_healthy
+
   db:
     image: postgres:17
     environment:

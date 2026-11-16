@@ -1,4 +1,4 @@
-import type { Database } from './client.js'
+import type { ReservedSql, Sql } from 'postgres'
 
 const IDENTIFIER = /^[a-z_][a-z0-9_]*$/
 
@@ -11,9 +11,9 @@ const READ_ONLY = ['migrations']
  * Gives the runtime role what the app needs in the current schema and no more: no DDL (it owns
  * nothing), no changes to append-only tables, and no changes to the migration records.
  */
-export async function grantAppRole(database: Database, role: string): Promise<void> {
+// Takes a connection, not the pool: the migration runner calls it on its reserved connection.
+export async function grantAppRole(client: Sql | ReservedSql, role: string): Promise<void> {
   if (!IDENTIFIER.test(role)) throw new Error(`Invalid role name "${role}"`)
-  const { client } = database
   const [row] = await client`select current_schema() as schema`
   const schema = String(row?.schema)
   if (!IDENTIFIER.test(schema)) throw new Error(`Invalid schema name "${schema}"`)

@@ -97,7 +97,7 @@ export async function runMigrations(
         applied.push(`${source.module}/${file}`)
       }
     }
-    if (options.appRole) await grantAppRole(database, options.appRole)
+    if (options.appRole) await grantAppRole(connection, options.appRole)
     if (applied.length > 0) log(`Applied ${String(applied.length)} migration(s)`)
     return applied
   } finally {

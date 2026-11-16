@@ -5,7 +5,7 @@ import { createRateLimiter, type Database, type MigrationSource } from '@aicomme
 import { betterAuth } from 'better-auth'
 import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { twoFactor } from 'better-auth/plugins'
-import { and, eq, sql } from 'drizzle-orm'
+import { eq } from 'drizzle-orm'
 import {
   adminAccount,
   adminRole,
@@ -51,6 +51,8 @@ export interface AdminAuth {
   handler(request: Request): Promise<Response>
   /** The admin behind a request, or null for a guest. */
   resolveActor(headers: Headers): Promise<Actor | null>
+  /** Like resolveActor, and says whether the admin has turned on 2FA. */
+  session(headers: Headers): Promise<{ actor: Actor; twoFactorEnabled: boolean } | null>
   identity: Identity
 }
 
@@ -188,30 +190,42 @@ export function createAdminAuth(options: AdminAuthOptions): AdminAuth {
     revokeSessions,
   }
 
-  return {
-    handler: (request) => auth.handler(request),
-    async resolveActor(headers) {
-      const found = await auth.api.getSession({ headers })
-      if (!found) return null
-      const [user] = await database.db
-        .select({ disabled: adminUser.disabled, twoFactorEnabled: adminUser.twoFactorEnabled })
-        .from(adminUser)
-        .where(eq(adminUser.id, found.user.id))
-      if (!user || user.disabled) return null
-      // Signed in but without 2FA: may only turn 2FA on.
-      if (!user.twoFactorEnabled)
-        return { type: 'admin', id: found.user.id, permissions: new Set() }
-      const rows = await database.db
-        .select({ permissions: adminRole.permissions })
-        .from(adminUserRole)
-        .innerJoin(adminRole, eq(adminRole.id, adminUserRole.roleId))
-        .where(and(eq(adminUserRole.userId, found.user.id), sql`true`))
+  const session = async (
+    headers: Headers,
+  ): Promise<{ actor: Actor; twoFactorEnabled: boolean } | null> => {
+    const found = await auth.api.getSession({ headers })
+    if (!found) return null
+    const [user] = await database.db
+      .select({ disabled: adminUser.disabled, twoFactorEnabled: adminUser.twoFactorEnabled })
+      .from(adminUser)
+      .where(eq(adminUser.id, found.user.id))
+    if (!user || user.disabled) return null
+    // Signed in but without 2FA: may only turn 2FA on.
+    if (!user.twoFactorEnabled) {
       return {
+        actor: { type: 'admin', id: found.user.id, permissions: new Set() },
+        twoFactorEnabled: false,
+      }
+    }
+    const rows = await database.db
+      .select({ permissions: adminRole.permissions })
+      .from(adminUserRole)
+      .innerJoin(adminRole, eq(adminRole.id, adminUserRole.roleId))
+      .where(eq(adminUserRole.userId, found.user.id))
+    return {
+      actor: {
         type: 'admin',
         id: found.user.id,
         permissions: new Set(rows.flatMap((r) => r.permissions)),
-      }
-    },
+      },
+      twoFactorEnabled: true,
+    }
+  }
+
+  return {
+    handler: (request) => auth.handler(request),
+    resolveActor: async (headers) => (await session(headers))?.actor ?? null,
+    session,
     identity: identityImpl,
   }
 }
