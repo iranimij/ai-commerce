@@ -3,11 +3,11 @@ import {
   type ResourceDefinition,
   type ResourceRecord,
   type ResourceStore,
-  type Revision,
   type WriteMeta,
 } from '@aicommerce/core'
 import { sql, type SQL } from 'drizzle-orm'
 import type { Database } from './client.js'
+import { createRevisions, iso } from './revisions.js'
 
 const IDENTIFIER = /^[a-z_][a-z0-9_]*$/
 
@@ -18,8 +18,6 @@ const ident = (name: string): SQL => {
 const column = (field: string) => field.replace(/[A-Z]/g, (c) => `_${c.toLowerCase()}`)
 // Milliseconds, so a timestamp survives the round trip through a JSON cursor unchanged.
 const NOW = sql.raw(`date_trunc('milliseconds', now())`)
-const iso = (col: string) =>
-  sql.raw(`to_char(${col} at time zone 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`)
 const json = (value: unknown) => sql`${JSON.stringify(value)}::jsonb`
 
 type Row = Record<string, unknown>
@@ -81,20 +79,7 @@ export function createPgResourceStore(database: Database): ResourceStore {
     return record
   }
 
-  const toRevision = (row: Row): Revision => ({
-    id: String(row.id),
-    resource: String(row.resource),
-    recordId: String(row.record_id),
-    version: row.version === null ? null : Number(row.version),
-    action: String(row.action),
-    actorType: row.actor_type as Revision['actorType'],
-    actorId: (row.actor_id ?? null) as string | null,
-    onBehalfOf: (row.on_behalf_of ?? null) as string | null,
-    at: String(row.__at),
-    before: (row.before ?? null) as ResourceRecord | null,
-    after: (row.after ?? null) as ResourceRecord | null,
-  })
-
+  const revisions = createRevisions(database)
   const writeRevision = (
     r: ResourceDefinition,
     recordId: string,
@@ -102,11 +87,7 @@ export function createPgResourceStore(database: Database): ResourceStore {
     meta: WriteMeta,
     before: ResourceRecord | null,
     after: ResourceRecord | null,
-  ) =>
-    run(sql`insert into revision
-      (resource, record_id, version, action, actor_type, actor_id, on_behalf_of, before, after)
-      values (${r.name}, ${recordId}, ${version}, ${meta.action}, ${meta.actor.type},
-        ${meta.actor.id}, ${meta.actor.onBehalfOf ?? null}, ${json(before)}, ${json(after)})`)
+  ) => revisions.record({ resource: r.name, recordId, version, meta, before, after })
 
   const getRow = async (r: ResourceDefinition, id: string, lock = false) => {
     const rows = await run(sql`${select(r)} where id = ${id}${lock ? sql` for update` : sql``}`)
@@ -223,23 +204,9 @@ export function createPgResourceStore(database: Database): ResourceStore {
       await writeRevision(r, id, null, meta, before, null)
     },
 
-    async history(r, id, cursor, limit) {
-      if (cursor !== undefined && !/^\d{1,19}$/.test(cursor)) {
-        throw new ActionError('invalid_input', 'Invalid cursor')
-      }
-      const rows = await run(sql`select *, ${iso('at')} as "__at" from revision
-        where resource = ${r.name} and record_id = ${id}
-        ${cursor === undefined ? sql`` : sql`and id < ${cursor}`}
-        order by id desc limit ${limit + 1}`)
-      const items = rows.slice(0, limit).map(toRevision)
-      return { items, nextCursor: rows.length > limit ? (items.at(-1)?.id ?? null) : null }
-    },
+    history: (r, id, cursor, limit) => revisions.page(r.name, id, cursor, limit),
 
-    async revision(r, revisionId) {
-      const [row] = await run(sql`select *, ${iso('at')} as "__at" from revision
-        where id = ${revisionId} and resource = ${r.name}`)
-      return row ? toRevision(row) : null
-    },
+    revision: (r, revisionId) => revisions.get(r.name, revisionId),
 
     async restore(r, revision, meta) {
       const snapshot = revision.after ?? revision.before

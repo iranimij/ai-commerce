@@ -3,6 +3,7 @@ import type { Subscriber } from './events.js'
 import type { AttributeDefinition } from './attributes.js'
 import type { Step } from './pipeline.js'
 import type { ResourceDefinition } from './resource.js'
+import type { SettingDefinition } from './settings.js'
 import type { ServiceProvision } from './service.js'
 
 /**
@@ -42,6 +43,9 @@ export interface ModuleDefinition {
   resources?: ResourceDefinition[]
   /** Attributes this module adds to a resource of its own or of a module it depends on. */
   attributes?: AttributeDefinition[]
+  /** Setting keys must start with a namespace of this module. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  settings?: SettingDefinition<any>[]
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   provides?: ServiceProvision<any>[]
 }

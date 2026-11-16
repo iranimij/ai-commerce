@@ -64,3 +64,15 @@ export {
   type AttributeStore,
   type AttributeType,
 } from './attributes.js'
+export {
+  createSettingsReader,
+  defineSetting,
+  settingRecordId,
+  settings,
+  settingStore,
+  type SettingDefinition,
+  type SettingInput,
+  type SettingSource,
+  type SettingsReader,
+  type SettingStore,
+} from './settings.js'
