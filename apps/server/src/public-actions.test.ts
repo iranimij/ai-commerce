@@ -28,6 +28,8 @@ test('the public actions are exactly the reviewed list', () => {
   // setup is finished. media.file-info gives only an image's width, for the public image route.
   // catalog.product-view, category-view and menu return only active products, enabled
   // categories and variants, and public attributes.
+  // search.query and search.suggest find only active products and visible categories, and filter
+  // and count only public attributes.
   expect(actual).toEqual([...reviewed].sort())
 })
 

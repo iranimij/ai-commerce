@@ -1,0 +1,33 @@
+{
+  "name": "@aicommerce/module-search",
+  "version": "0.0.0",
+  "description": "Full-text product search with filters, sorting and suggestions, behind a replaceable engine",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "migrations"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts"
+  },
+  "dependencies": {
+    "@aicommerce/core": "workspace:*",
+    "@aicommerce/db": "workspace:*",
+    "@aicommerce/module-catalog": "workspace:*",
+    "@aicommerce/module-media": "workspace:*",
+    "@aicommerce/module-setup": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "zod": "^4.6.7"
+  }
+}
