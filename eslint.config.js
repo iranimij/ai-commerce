@@ -5,7 +5,7 @@ export default tseslint.config(
   { ignores: ['**/dist/**', '**/node_modules/**', '.superpowers/**'] },
   js.configs.recommended,
   {
-    files: ['**/*.ts'],
+    files: ['**/*.ts', '**/*.tsx'],
     extends: [...tseslint.configs.strictTypeChecked],
     languageOptions: {
       parserOptions: { projectService: true, tsconfigRootDir: import.meta.dirname },

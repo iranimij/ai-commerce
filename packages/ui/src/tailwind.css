@@ -1,0 +1,30 @@
+/*
+ * The Tailwind 4 preset. In an app's stylesheet: @import "@aicommerce/ui/tailwind.css";
+ * It brings Tailwind, the tokens, and scans the components' classes.
+ */
+@import 'tailwindcss';
+@import './brand.css';
+@import './tokens.css';
+
+@source '../dist';
+
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+@theme inline {
+  --color-bg: var(--ai-bg);
+  --color-surface: var(--ai-surface);
+  --color-fg: var(--ai-fg);
+  --color-muted: var(--ai-muted);
+  --color-border: var(--ai-border);
+  --color-accent: var(--ai-accent);
+  --color-accent-fg: var(--ai-accent-fg);
+  --color-danger: var(--ai-danger);
+  --color-danger-fg: var(--ai-danger-fg);
+  --color-success: var(--ai-success);
+  --color-warning: var(--ai-warning);
+  --color-info: var(--ai-info);
+  --color-focus: var(--ai-focus);
+  --radius-ui: var(--ai-radius);
+  --radius-ui-lg: var(--ai-radius-lg);
+  --font-sans: var(--ai-font);
+}

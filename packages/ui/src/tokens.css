@@ -1,0 +1,71 @@
+/*
+ * Design tokens. Light by default; dark with data-theme="dark", or when the system asks for it
+ * and no theme is forced. Components use logical properties only, so right-to-left needs nothing.
+ */
+/* The provider sets data-theme on its own element, so a theme can apply to part of a page. */
+:root,
+[data-theme='light'] {
+  --ai-bg: var(--brand-paper);
+  --ai-surface: var(--brand-white);
+  --ai-fg: var(--brand-ink);
+  --ai-muted: var(--brand-slate);
+  --ai-border: #d6d7d0;
+  --ai-accent: var(--brand-accent);
+  --ai-accent-fg: #ffffff;
+  --ai-danger: #b3261e;
+  --ai-danger-fg: #ffffff;
+  --ai-success: #0b6e4c;
+  --ai-warning: #8a5a00;
+  --ai-info: #1f2f9e;
+  --ai-focus: var(--brand-accent);
+  --ai-radius: 0.5rem;
+  --ai-radius-lg: 0.875rem;
+  --ai-space: 0.25rem;
+  --ai-font: var(--brand-font);
+  --ai-text: 1rem;
+  --ai-text-sm: 0.875rem;
+  --ai-text-lg: 1.25rem;
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --ai-bg: var(--brand-ink);
+  --ai-surface: #1b1e25;
+  --ai-fg: var(--brand-paper);
+  --ai-muted: #a3a7b3;
+  --ai-border: #343844;
+  --ai-accent: var(--brand-accent-on-dark);
+  --ai-accent-fg: var(--brand-ink);
+  --ai-danger: #ff8a80;
+  --ai-danger-fg: var(--brand-ink);
+  --ai-success: #3fd29b;
+  --ai-warning: #f2b84b;
+  --ai-info: #9aa6ff;
+  --ai-focus: var(--brand-accent-on-dark);
+  color-scheme: dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --ai-bg: var(--brand-ink);
+    --ai-surface: #1b1e25;
+    --ai-fg: var(--brand-paper);
+    --ai-muted: #a3a7b3;
+    --ai-border: #343844;
+    --ai-accent: var(--brand-accent-on-dark);
+    --ai-accent-fg: var(--brand-ink);
+    --ai-danger: #ff8a80;
+    --ai-danger-fg: var(--brand-ink);
+    --ai-success: #3fd29b;
+    --ai-warning: #f2b84b;
+    --ai-info: #9aa6ff;
+    --ai-focus: var(--brand-accent-on-dark);
+    color-scheme: dark;
+  }
+}
+
+body {
+  background: var(--ai-bg);
+  color: var(--ai-fg);
+  font-family: var(--ai-font);
+}

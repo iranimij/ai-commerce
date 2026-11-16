@@ -16,3 +16,4 @@ One page per contract. Each example is real code in `modules/sample`, so CI runs
 | [Jobs](jobs.md)                           | Background work with retries                            |
 | [Admin sign-in and roles](admin-auth.md)  | Sessions, mandatory 2FA, roles and escalation rules     |
 | [HTTP API](http-api.md)                   | Calling actions over HTTP, OpenAPI, limits and headers  |
+| [Design system](ui.md)                    | Tokens, themes, right-to-left and the React components  |
